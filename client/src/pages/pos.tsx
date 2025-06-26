@@ -60,8 +60,28 @@ export default function POS() {
   const filteredProducts = products.filter(product =>
     product.isActive &&
     (selectedCategory === null || product.categoryId === selectedCategory) &&
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     (product.barcode && product.barcode.includes(barcodeSearch)))
   );
+
+  // Fonction de recherche par code-barres
+  const handleBarcodeSearch = (barcode: string) => {
+    const product = products.find(p => p.barcode === barcode);
+    if (product) {
+      addToCart(product);
+      setBarcodeSearch("");
+      toast({
+        title: "Produit scanné",
+        description: `${product.name} ajouté au panier`,
+      });
+    } else {
+      toast({
+        title: "Produit non trouvé",
+        description: "Code-barres non reconnu",
+        variant: "destructive",
+      });
+    }
+  };
 
   const addToCart = (product: Product) => {
     // Vérifier le stock disponible
@@ -148,7 +168,22 @@ export default function POS() {
     setCart(current => current.filter(item => item.productId !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+  const discountAmount = (cartSubtotal * discount) / 100;
+  const cartTotal = cartSubtotal - discountAmount;
+  const taxAmount = cartTotal * 0.20; // TVA 20%
+  const finalTotal = cartTotal + taxAmount;
+
+  const clearCart = () => {
+    setCart([]);
+    setDiscount(0);
+    setAmountReceived("");
+  };
+
+  const calculateChange = () => {
+    const received = parseFloat(amountReceived) || 0;
+    return received - finalTotal;
+  };
 
   const handleCheckout = (paymentMethod: "cash" | "card" | "check") => {
     if (cart.length === 0) {
@@ -182,15 +217,35 @@ export default function POS() {
                 <CardTitle style={{ color: '#333333' }}>Point de Vente</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Search */}
-                <div className="mb-6">
-                  <Input
-                    placeholder="Rechercher un produit..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
-                    style={{ borderColor: '#E0E0E0' }}
-                  />
+                {/* Search and Barcode */}
+                <div className="mb-6 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Rechercher un produit..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        style={{ borderColor: '#E0E0E0' }}
+                      />
+                    </div>
+                    <div className="relative">
+                      <ScanBarcode className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Scanner code-barres..."
+                        value={barcodeSearch}
+                        onChange={(e) => setBarcodeSearch(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && barcodeSearch) {
+                            handleBarcodeSearch(barcodeSearch);
+                          }
+                        }}
+                        className="pl-10"
+                        style={{ borderColor: '#E0E0E0' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Categories */}
@@ -308,17 +363,80 @@ export default function POS() {
                       ))}
                     </div>
 
-                    {/* Total */}
-                    <div className="border-t pt-4 mb-6" style={{ borderColor: '#E0E0E0' }}>
-                      <div className="flex justify-between items-center">
+                    {/* Discount */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium" style={{ color: '#333333' }}>
+                          Remise (%)
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={discount}
+                          onChange={(e) => setDiscount(Number(e.target.value))}
+                          className="w-20 text-center"
+                          style={{ borderColor: '#E0E0E0' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Totals Breakdown */}
+                    <div className="border-t pt-4 mb-6 space-y-2" style={{ borderColor: '#E0E0E0' }}>
+                      <div className="flex justify-between">
+                        <span style={{ color: '#666666' }}>Sous-total:</span>
+                        <span style={{ color: '#333333' }}>{cartSubtotal.toFixed(2)} €</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between">
+                          <span style={{ color: '#666666' }}>Remise ({discount}%):</span>
+                          <span style={{ color: '#27AE60' }}>-{discountAmount.toFixed(2)} €</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span style={{ color: '#666666' }}>Après remise:</span>
+                        <span style={{ color: '#333333' }}>{cartTotal.toFixed(2)} €</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: '#666666' }}>TVA (20%):</span>
+                        <span style={{ color: '#333333' }}>{taxAmount.toFixed(2)} €</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t" style={{ borderColor: '#E0E0E0' }}>
                         <span className="text-lg font-semibold" style={{ color: '#333333' }}>
-                          Total:
+                          Total TTC:
                         </span>
                         <span className="text-2xl font-bold" style={{ color: '#2F80ED' }}>
-                          {cartTotal.toFixed(2)} €
+                          {finalTotal.toFixed(2)} €
                         </span>
                       </div>
                     </div>
+
+                    {/* Cash Payment */}
+                    {paymentMethod === "cash" && (
+                      <div className="mb-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium" style={{ color: '#333333' }}>
+                            Montant reçu (€)
+                          </label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={amountReceived}
+                            onChange={(e) => setAmountReceived(e.target.value)}
+                            className="w-24 text-center"
+                            style={{ borderColor: '#E0E0E0' }}
+                          />
+                        </div>
+                        {amountReceived && (
+                          <div className="flex justify-between">
+                            <span style={{ color: '#666666' }}>Monnaie à rendre:</span>
+                            <span className={`font-semibold ${calculateChange() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {calculateChange().toFixed(2)} €
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Payment Methods */}
                     <div className="space-y-3">
