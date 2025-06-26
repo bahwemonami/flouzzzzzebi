@@ -19,7 +19,8 @@ import {
   TrendingUp,
   BarChart3,
   Download,
-  RefreshCw
+  RefreshCw,
+  Package
 } from "lucide-react";
 import type { Transaction, TransactionItem, Product } from "@shared/schema";
 

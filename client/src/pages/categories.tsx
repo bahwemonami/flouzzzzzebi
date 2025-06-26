@@ -43,10 +43,7 @@ export default function Categories() {
         name: data.name,
         color: data.color,
       };
-      return await apiRequest("/api/categories", {
-        method: "POST",
-        body: JSON.stringify(categoryData),
-      });
+      return await apiRequest("/api/categories", "POST", categoryData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });

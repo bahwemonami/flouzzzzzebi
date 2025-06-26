@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Package, BarChart3, TrendingUp, Users, Receipt } from "lucide-react";
+import { ShoppingCart, Package, BarChart3, TrendingUp, Users, Receipt, Tag } from "lucide-react";
 import { Link } from "wouter";
 import Layout from "@/components/Layout";
 import type { Transaction, Product } from "@shared/schema";
@@ -57,15 +57,15 @@ export default function Dashboard() {
             </Card>
           </Link>
 
-          <Link href="/reports">
+          <Link href="/categories">
             <Card className="cursor-pointer transition-transform hover:scale-105 btn-touch">
               <CardContent className="p-6 text-center">
-                <BarChart3 className="w-12 h-12 mx-auto mb-4" style={{ color: '#56CCF2' }} />
+                <Tag className="w-12 h-12 mx-auto mb-4" style={{ color: '#56CCF2' }} />
                 <h3 className="text-lg font-semibold mb-2" style={{ color: '#333333' }}>
-                  Rapports
+                  Catégories
                 </h3>
                 <p className="text-sm" style={{ color: '#666666' }}>
-                  Analyses & stats
+                  Organiser les produits
                 </p>
               </CardContent>
             </Card>
