@@ -130,6 +130,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Category routes
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const categories = await storage.getCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/categories", requireAuth, async (req, res) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(categoryData);
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  // Product routes
+  app.get("/api/products", async (req, res) => {
+    try {
+      const { categoryId } = req.query;
+      const products = categoryId 
+        ? await storage.getProductsByCategory(Number(categoryId))
+        : await storage.getProducts();
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/products/:id", async (req, res) => {
+    try {
+      const product = await storage.getProduct(Number(req.params.id));
+      if (!product) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/products", requireAuth, async (req, res) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      res.json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  // Transaction routes
+  app.get("/api/transactions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const transactions = await storage.getTransactions(userId);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/checkout", requireAuth, async (req, res) => {
+    try {
+      const checkoutData = checkoutSchema.parse(req.body);
+      const userId = (req as any).user.id;
+      
+      let total = 0;
+      const validItems = [];
+
+      // Validate items and calculate total
+      for (const item of checkoutData.items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product || !product.isActive) {
+          return res.status(400).json({ 
+            message: `Produit ${item.productId} non disponible` 
+          });
+        }
+        
+        if (product.stock !== null && product.stock < item.quantity) {
+          return res.status(400).json({ 
+            message: `Stock insuffisant pour ${product.name}` 
+          });
+        }
+
+        const itemTotal = Number(product.price) * item.quantity;
+        total += itemTotal;
+        
+        validItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: product.price,
+          totalPrice: itemTotal.toFixed(2),
+        });
+      }
+
+      // Create transaction
+      const transaction = await storage.createTransaction({
+        userId,
+        total: total.toFixed(2),
+        paymentMethod: checkoutData.paymentMethod,
+      });
+
+      // Create transaction items
+      for (const item of validItems) {
+        await storage.createTransactionItem({
+          transactionId: transaction.id,
+          ...item,
+        });
+
+        // Update stock
+        const product = await storage.getProduct(item.productId);
+        if (product && product.stock !== null) {
+          await storage.updateProduct(item.productId, {
+            stock: product.stock - item.quantity,
+          });
+        }
+      }
+
+      res.json({
+        transaction,
+        items: validItems,
+        total: total.toFixed(2),
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Checkout error:", error);
+      res.status(500).json({ message: "Erreur lors de la transaction" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

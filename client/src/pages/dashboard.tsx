@@ -2,11 +2,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, ScanBarcode } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LogOut, ScanBarcode, ShoppingCart, Package, BarChart3, Plus } from "lucide-react";
+import { Link } from "wouter";
+import type { Transaction, Product } from "@shared/schema";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+
+  const { data: transactions = [] } = useQuery<Transaction[]>({
+    queryKey: ["/api/transactions"],
+  });
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  // Calculate stats
+  const today = new Date().toDateString();
+  const todayTransactions = transactions.filter(t => 
+    new Date(t.createdAt || '').toDateString() === today
+  );
+  const todayTotal = todayTransactions.reduce((sum, t) => sum + Number(t.total), 0);
+  const todayCount = todayTransactions.length;
+  const totalProducts = products.filter(p => p.isActive).length;
 
   const handleLogout = async () => {
     try {
@@ -93,6 +113,37 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <Link href="/pos">
+            <Card className="cursor-pointer transition-transform hover:scale-105 btn-touch">
+              <CardContent className="p-6 text-center">
+                <ShoppingCart className="w-12 h-12 mx-auto mb-4" style={{ color: '#2F80ED' }} />
+                <h3 className="text-xl font-semibold mb-2" style={{ color: '#333333' }}>
+                  Point de Vente
+                </h3>
+                <p className="text-sm" style={{ color: '#666666' }}>
+                  Commencer une nouvelle vente
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/products">
+            <Card className="cursor-pointer transition-transform hover:scale-105 btn-touch">
+              <CardContent className="p-6 text-center">
+                <Package className="w-12 h-12 mx-auto mb-4" style={{ color: '#27AE60' }} />
+                <h3 className="text-xl font-semibold mb-2" style={{ color: '#333333' }}>
+                  Produits
+                </h3>
+                <p className="text-sm" style={{ color: '#666666' }}>
+                  Gérer le catalogue
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
@@ -103,7 +154,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" style={{ color: '#333333' }}>
-                0,00 €
+                {todayTotal.toFixed(2)} €
               </div>
             </CardContent>
           </Card>
@@ -116,7 +167,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" style={{ color: '#333333' }}>
-                0
+                {todayCount}
               </div>
             </CardContent>
           </Card>
@@ -124,12 +175,12 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
-                Produits vendus
+                Produits actifs
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" style={{ color: '#333333' }}>
-                0
+                {totalProducts}
               </div>
             </CardContent>
           </Card>
