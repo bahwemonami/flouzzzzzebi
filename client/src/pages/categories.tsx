@@ -38,7 +38,7 @@ export default function Categories() {
     queryKey: ["/api/categories"],
   });
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [] } = useQuery<any[]>({
     queryKey: ["/api/products"],
   });
 

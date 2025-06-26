@@ -178,7 +178,7 @@ export default function Products() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Catégorie</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Sélectionner une catégorie" />
@@ -204,7 +204,7 @@ export default function Products() {
                       <FormItem>
                         <FormLabel>Stock initial (optionnel)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="Ex: 50" {...field} />
+                          <Input type="number" placeholder="Ex: 50" {...field} value={field.value || ""} onChange={(e) => field.onChange(e.target.value)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -218,7 +218,7 @@ export default function Products() {
                       <FormItem>
                         <FormLabel>Code-barres (optionnel)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: 1234567890123" {...field} />
+                          <Input placeholder="Ex: 1234567890123" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
