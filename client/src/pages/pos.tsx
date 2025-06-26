@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
-import { Plus, Minus, ShoppingCart, CreditCard, Banknote, Receipt } from "lucide-react";
+import { Plus, Minus, ShoppingCart, CreditCard, Banknote, Receipt, Search, ScanBarcode, Calculator, Trash2 } from "lucide-react";
 import type { Product, Category, CartItem, CheckoutData } from "@shared/schema";
 
 interface CartItemWithProduct extends CartItem {
@@ -21,6 +22,10 @@ export default function POS() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItemWithProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [barcodeSearch, setBarcodeSearch] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "check">("cash");
+  const [amountReceived, setAmountReceived] = useState("");
+  const [discount, setDiscount] = useState(0);
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -59,6 +64,27 @@ export default function POS() {
   );
 
   const addToCart = (product: Product) => {
+    // Vérifier le stock disponible
+    if (product.stock !== null && product.stock <= 0) {
+      toast({
+        title: "Stock insuffisant",
+        description: `${product.name} n'est plus en stock`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentQuantityInCart = cart.find(item => item.productId === product.id)?.quantity || 0;
+    
+    if (product.stock !== null && currentQuantityInCart >= product.stock) {
+      toast({
+        title: "Stock insuffisant", 
+        description: `Stock disponible: ${product.stock}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setCart(current => {
       const existingItem = current.find(item => item.productId === product.id);
       if (existingItem) {
@@ -81,11 +107,27 @@ export default function POS() {
         }];
       }
     });
+
+    toast({
+      title: "Produit ajouté",
+      description: `${product.name} ajouté au panier`,
+    });
   };
 
   const updateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(productId);
+      return;
+    }
+
+    // Vérifier le stock disponible
+    const product = products.find(p => p.id === productId);
+    if (product && product.stock !== null && newQuantity > product.stock) {
+      toast({
+        title: "Stock insuffisant",
+        description: `Stock disponible: ${product.stock}`,
+        variant: "destructive",
+      });
       return;
     }
     
