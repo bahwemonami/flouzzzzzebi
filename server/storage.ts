@@ -23,6 +23,7 @@ export interface IStorage {
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
   
   // Transaction operations
   getTransactions(userId?: number): Promise<Transaction[]>;
@@ -237,6 +238,10 @@ export class MemStorage implements IStorage {
     };
     this.products.set(id, updated);
     return updated;
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    return this.products.delete(id);
   }
 
   // Transaction operations

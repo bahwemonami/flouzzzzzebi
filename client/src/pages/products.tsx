@@ -373,7 +373,7 @@ export default function Products() {
                     {product.name}
                   </h3>
                   {product.stock !== null && product.stock < 10 && (
-                    <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" title="Stock faible" />
+                    <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   )}
                 </div>
               </CardHeader>

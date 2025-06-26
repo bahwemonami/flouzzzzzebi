@@ -191,6 +191,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.updateProduct(Number(req.params.id), productData);
+      if (!product) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+      res.json(product);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.delete("/api/products/:id", requireAuth, async (req, res) => {
+    try {
+      const success = await storage.deleteProduct(Number(req.params.id));
+      if (!success) {
+        return res.status(404).json({ message: "Produit non trouvé" });
+      }
+      res.json({ message: "Produit supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   // Transaction routes
   app.get("/api/transactions", requireAuth, async (req, res) => {
     try {
