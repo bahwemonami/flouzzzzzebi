@@ -43,7 +43,12 @@ export default function Categories() {
         name: data.name,
         color: data.color,
       };
-      return await apiRequest("/api/categories", "POST", categoryData);
+      
+      if (editingCategory) {
+        return await apiRequest(`/api/categories/${editingCategory.id}`, "PUT", categoryData);
+      } else {
+        return await apiRequest("/api/categories", "POST", categoryData);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
@@ -51,8 +56,8 @@ export default function Categories() {
       setEditingCategory(null);
       form.reset();
       toast({
-        title: "Catégorie créée",
-        description: "La catégorie a été créée avec succès",
+        title: editingCategory ? "Catégorie modifiée" : "Catégorie créée",
+        description: editingCategory ? "La catégorie a été modifiée avec succès" : "La catégorie a été créée avec succès",
       });
     },
     onError: (error) => {

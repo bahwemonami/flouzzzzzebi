@@ -153,6 +153,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/categories/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const categoryData = insertCategorySchema.parse(req.body);
+      const category = await storage.updateCategory(id, categoryData);
+      if (!category) {
+        return res.status(404).json({ message: "Catégorie non trouvée" });
+      }
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.delete("/api/categories/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteCategory(id);
+      if (!success) {
+        return res.status(404).json({ message: "Catégorie non trouvée" });
+      }
+      res.json({ message: "Catégorie supprimée" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   // Product routes
   app.get("/api/products", async (req, res) => {
     try {
