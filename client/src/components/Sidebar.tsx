@@ -112,18 +112,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2F80ED] to-[#56CCF2] flex items-center justify-center">
                   <span className="text-white text-sm font-semibold">
-                    {user?.firstName?.charAt(0) || 'U'}
+                    {(user as any)?.firstName?.charAt(0) || 'U'}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: '#333333' }}>
-                    {user?.firstName || 'Utilisateur'} {user?.lastName || ''}
+                    {(user as any)?.firstName || 'Utilisateur'} {(user as any)?.lastName || ''}
                   </p>
                   <p className="text-xs truncate" style={{ color: '#666666' }}>
-                    {user?.email}
+                    {(user as any)?.email}
                   </p>
                 </div>
-                {user?.isDemo && (
+                {(user as any)?.isDemo && (
                   <span className="px-2 py-1 text-xs rounded-full bg-[#56CCF2] text-white">
                     DEMO
                   </span>

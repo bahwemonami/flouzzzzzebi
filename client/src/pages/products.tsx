@@ -18,27 +18,27 @@ import type { Product, Category, InsertProduct } from "@shared/schema";
 import { z } from "zod";
 
 const productFormSchema = z.object({
-  name: z.string().min(1, "Nom requis"),
-  price: z.string().min(1, "Prix requis"),
+  name: z.string().min(1, "Le nom est requis"),
+  price: z.string().min(1, "Le prix est requis"),
   categoryId: z.string().optional(),
-  barcode: z.string().optional(),
   stock: z.string().optional(),
-  isActive: z.boolean().optional(),
+  barcode: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
 
 export default function Products() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
@@ -48,56 +48,65 @@ export default function Products() {
       name: "",
       price: "",
       categoryId: "",
-      barcode: "",
       stock: "",
-      isActive: true,
+      barcode: "",
     },
   });
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
       const productData: InsertProduct = {
-        ...data,
-        price: data.price,
-        categoryId: data.categoryId ? Number(data.categoryId) : null,
-        stock: data.stock ? Number(data.stock) : null,
+        name: data.name,
+        price: parseFloat(data.price),
+        categoryId: data.categoryId ? parseInt(data.categoryId) : null,
+        stock: data.stock ? parseInt(data.stock) : null,
+        barcode: data.barcode || null,
       };
-      const res = await apiRequest("POST", "/api/products", productData);
-      return res.json();
+      return await apiRequest("/api/products", "POST", productData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      setIsDialogOpen(false);
-      form.reset();
       toast({
         title: "Produit créé",
         description: "Le produit a été ajouté avec succès",
       });
+      setIsDialogOpen(false);
+      form.reset();
     },
     onError: (error) => {
       toast({
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de créer le produit",
+        description: "Impossible de créer le produit",
         variant: "destructive",
       });
     },
-  });
-
-  const filteredProducts = products.filter(product => {
-    if (selectedCategory === "all") return true;
-    if (selectedCategory === "no-category") return product.categoryId === null;
-    return product.categoryId === Number(selectedCategory);
   });
 
   const onSubmit = (data: ProductFormData) => {
     createProductMutation.mutate(data);
   };
 
-  const getCategoryName = (categoryId: number | null) => {
-    if (!categoryId) return "Sans catégorie";
-    const category = categories.find(c => c.id === categoryId);
-    return category?.name || "Catégorie inconnue";
-  };
+  // Filter products based on search and category
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.barcode && product.barcode.includes(searchTerm));
+    
+    if (selectedCategory === "all") return matchesSearch;
+    if (selectedCategory === "no-category") return matchesSearch && !product.categoryId;
+    return matchesSearch && product.categoryId === parseInt(selectedCategory);
+  });
+
+  const isLoading = productsLoading || categoriesLoading;
+
+  if (isLoading) {
+    return (
+      <Layout title="Gestion des Produits">
+        <div className="p-6">
+          <div className="text-center">Chargement...</div>
+        </div>
+      </Layout>
+    );
+  }
 
   const getCategoryColor = (categoryId: number | null) => {
     if (!categoryId) return "#666666";
@@ -106,27 +115,19 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
-      <div className="max-w-6xl mx-auto">
+    <Layout title="Gestion des Produits">
+      <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Package className="w-8 h-8" style={{ color: '#27AE60' }} />
-              <div>
-                <h1 className="text-2xl font-bold" style={{ color: '#333333' }}>
-                  Gestion des Produits
-                </h1>
-                <p className="text-sm" style={{ color: '#666666' }}>
-                  {filteredProducts.length} produit{filteredProducts.length !== 1 ? 's' : ''}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <Package className="w-8 h-8" style={{ color: '#27AE60' }} />
+            <div>
+              <h2 className="text-xl font-semibold" style={{ color: '#333333' }}>
+                Catalogue de Produits
+              </h2>
+              <p className="text-sm" style={{ color: '#666666' }}>
+                {filteredProducts.length} produit{filteredProducts.length !== 1 ? 's' : ''}
+              </p>
             </div>
           </div>
 
@@ -137,9 +138,9 @@ export default function Products() {
                 Nouveau Produit
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Ajouter un produit</DialogTitle>
+                <DialogTitle>Nouveau Produit</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -150,7 +151,7 @@ export default function Products() {
                       <FormItem>
                         <FormLabel>Nom du produit</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Coca-Cola" {...field} />
+                          <Input placeholder="Ex: Café Espresso" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -164,7 +165,7 @@ export default function Products() {
                       <FormItem>
                         <FormLabel>Prix (€)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" step="0.01" placeholder="Ex: 2.50" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -184,7 +185,6 @@ export default function Products() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Sans catégorie</SelectItem>
                             {categories.map((category) => (
                               <SelectItem key={category.id} value={category.id.toString()}>
                                 {category.name}
@@ -204,7 +204,7 @@ export default function Products() {
                       <FormItem>
                         <FormLabel>Stock initial (optionnel)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input type="number" placeholder="Ex: 50" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -242,7 +242,7 @@ export default function Products() {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-4">
               <Button
                 variant={selectedCategory === "all" ? "default" : "outline"}
                 onClick={() => setSelectedCategory("all")}
@@ -258,55 +258,62 @@ export default function Products() {
                 onClick={() => setSelectedCategory("no-category")}
                 size="sm"
                 style={{ 
-                  backgroundColor: selectedCategory === "no-category" ? '#666666' : 'transparent'
+                  backgroundColor: selectedCategory === "no-category" ? '#2F80ED' : 'transparent'
                 }}
               >
-                Sans catégorie ({products.filter(p => !p.categoryId).length})
+                Sans catégorie
               </Button>
-              {categories.map((category) => {
-                const count = products.filter(p => p.categoryId === category.id).length;
-                return (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id.toString() ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category.id.toString())}
-                    size="sm"
-                    style={{ 
-                      backgroundColor: selectedCategory === category.id.toString() ? category.color : 'transparent'
-                    }}
-                  >
-                    {category.name} ({count})
-                  </Button>
-                );
-              })}
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id.toString() ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category.id.toString())}
+                  size="sm"
+                  style={{ 
+                    backgroundColor: selectedCategory === category.id.toString() ? category.color : 'transparent',
+                    borderColor: category.color
+                  }}
+                >
+                  {category.name} ({products.filter(p => p.categoryId === category.id).length})
+                </Button>
+              ))}
             </div>
+            
+            <Input
+              placeholder="Rechercher un produit..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
           </CardContent>
         </Card>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="transition-transform hover:scale-105">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
+            <Card key={product.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
                   <Badge 
-                    variant="secondary"
                     style={{ 
-                      backgroundColor: getCategoryColor(product.categoryId) + '20',
-                      color: getCategoryColor(product.categoryId)
+                      backgroundColor: getCategoryColor(product.categoryId),
+                      color: 'white'
                     }}
                   >
-                    {getCategoryName(product.categoryId)}
+                    {product.categoryId ? 
+                      categories.find(c => c.id === product.categoryId)?.name || 'Sans catégorie' : 
+                      'Sans catégorie'
+                    }
                   </Badge>
-                  {!product.isActive && (
-                    <Badge variant="destructive">Inactif</Badge>
-                  )}
+                  <Button variant="ghost" size="sm">
+                    <Edit className="w-4 h-4" />
+                  </Button>
                 </div>
-
-                <h3 className="font-semibold mb-2" style={{ color: '#333333' }}>
+                <h3 className="font-semibold text-lg leading-tight" style={{ color: '#333333' }}>
                   {product.name}
                 </h3>
-
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm" style={{ color: '#666666' }}>Prix:</span>
@@ -327,17 +334,13 @@ export default function Products() {
                   )}
 
                   {product.barcode && (
-                    <div className="text-xs" style={{ color: '#666666' }}>
-                      Code: {product.barcode}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm" style={{ color: '#666666' }}>Code-barres:</span>
+                      <span className="text-xs font-mono" style={{ color: '#666666' }}>
+                        {product.barcode}
+                      </span>
                     </div>
                   )}
-                </div>
-
-                <div className="mt-4 pt-3 border-t" style={{ borderColor: '#E0E0E0' }}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Edit className="w-3 h-3 mr-2" />
-                    Modifier
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -362,6 +365,6 @@ export default function Products() {
           </Card>
         )}
       </div>
-    </div>
+    </Layout>
   );
 }
