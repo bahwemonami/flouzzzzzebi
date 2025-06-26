@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
-import { Plus, Package, Edit } from "lucide-react";
+import { Plus, Package, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { insertProductSchema } from "@shared/schema";
 import type { Product, Category, InsertProduct } from "@shared/schema";
 import { z } from "zod";
@@ -29,6 +29,7 @@ type ProductFormData = z.infer<typeof productFormSchema>;
 
 export default function Products() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
@@ -62,21 +63,46 @@ export default function Products() {
         stock: data.stock ? Number(data.stock) : null,
         barcode: data.barcode || null,
       };
-      return await apiRequest("/api/products", "POST", productData);
+      if (editingProduct) {
+        return await apiRequest(`/api/products/${editingProduct.id}`, "PUT", productData);
+      } else {
+        return await apiRequest("/api/products", "POST", productData);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({
-        title: "Produit créé",
-        description: "Le produit a été ajouté avec succès",
+        title: editingProduct ? "Produit modifié" : "Produit créé",
+        description: editingProduct ? "Le produit a été modifié avec succès" : "Le produit a été ajouté avec succès",
       });
       setIsDialogOpen(false);
+      setEditingProduct(null);
       form.reset();
     },
     onError: (error) => {
       toast({
         title: "Erreur",
-        description: "Impossible de créer le produit",
+        description: editingProduct ? "Impossible de modifier le produit" : "Impossible de créer le produit",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest(`/api/products/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Produit supprimé",
+        description: "Le produit a été supprimé avec succès",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le produit",
         variant: "destructive",
       });
     },
@@ -84,6 +110,24 @@ export default function Products() {
 
   const onSubmit = (data: ProductFormData) => {
     createProductMutation.mutate(data);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    form.reset({
+      name: product.name,
+      price: product.price.toString(),
+      categoryId: product.categoryId?.toString() || "",
+      stock: product.stock?.toString() || "",
+      barcode: product.barcode || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteProduct = (product: Product) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer "${product.name}" ?`)) {
+      deleteProductMutation.mutate(product.id);
+    }
   };
 
   // Filter products based on search and category
@@ -140,7 +184,7 @@ export default function Products() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Nouveau Produit</DialogTitle>
+                <DialogTitle>{editingProduct ? "Modifier le Produit" : "Nouveau Produit"}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -305,13 +349,33 @@ export default function Products() {
                       'Sans catégorie'
                     }
                   </Badge>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditProduct(product)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteProduct(product)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-lg leading-tight" style={{ color: '#333333' }}>
-                  {product.name}
-                </h3>
+                <div className="flex items-start gap-2">
+                  <h3 className="font-semibold text-lg leading-tight flex-1" style={{ color: '#333333' }}>
+                    {product.name}
+                  </h3>
+                  {product.stock !== null && product.stock < 10 && (
+                    <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" title="Stock faible" />
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

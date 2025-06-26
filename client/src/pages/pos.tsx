@@ -438,34 +438,63 @@ export default function POS() {
                       </div>
                     )}
 
-                    {/* Payment Methods */}
+                    {/* Payment Method Selection */}
+                    <div className="mb-4">
+                      <label className="text-sm font-medium mb-2 block" style={{ color: '#333333' }}>
+                        Mode de paiement
+                      </label>
+                      <Select value={paymentMethod} onValueChange={(value: "cash" | "card" | "check") => setPaymentMethod(value)}>
+                        <SelectTrigger style={{ borderColor: '#E0E0E0' }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">
+                            <div className="flex items-center gap-2">
+                              <Banknote className="w-4 h-4" />
+                              Espèces
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="card">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4" />
+                              Carte bancaire
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="check">
+                            <div className="flex items-center gap-2">
+                              <Receipt className="w-4 h-4" />
+                              Chèque
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Action Buttons */}
                     <div className="space-y-3">
                       <Button
+                        onClick={() => handleCheckout(paymentMethod)}
+                        disabled={cart.length === 0 || (paymentMethod === "cash" && calculateChange() < 0) || checkoutMutation.isPending}
                         className="w-full btn-touch"
                         style={{ backgroundColor: '#27AE60' }}
-                        onClick={() => handleCheckout("cash")}
-                        disabled={checkoutMutation.isPending}
                       >
-                        <Banknote className="w-4 h-4 mr-2" />
-                        Espèces
+                        <div className="flex items-center justify-center gap-2">
+                          <Calculator className="w-5 h-5" />
+                          <span>Finaliser la vente - {finalTotal.toFixed(2)} €</span>
+                        </div>
                       </Button>
+
                       <Button
+                        onClick={clearCart}
+                        disabled={cart.length === 0}
+                        variant="outline"
                         className="w-full btn-touch"
-                        style={{ backgroundColor: '#2F80ED' }}
-                        onClick={() => handleCheckout("card")}
-                        disabled={checkoutMutation.isPending}
+                        style={{ borderColor: '#E0E0E0' }}
                       >
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        Carte
-                      </Button>
-                      <Button
-                        className="w-full btn-touch"
-                        style={{ backgroundColor: '#56CCF2' }}
-                        onClick={() => handleCheckout("check")}
-                        disabled={checkoutMutation.isPending}
-                      >
-                        <Receipt className="w-4 h-4 mr-2" />
-                        Chèque
+                        <div className="flex items-center justify-center gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          <span>Vider le panier</span>
+                        </div>
                       </Button>
                     </div>
                   </>
