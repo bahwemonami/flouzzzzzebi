@@ -1,8 +1,8 @@
-# FLOUZ - Cash Register Application
+# FLOUZ - Application de Caisse Complète
 
 ## Overview
 
-FLOUZ is a modern, touch-optimized cash register application built with React and Node.js. The application features a clean, professional interface designed for retail environments with a focus on simplicity and efficiency. It includes user authentication, a demo mode, and follows modern web development best practices.
+FLOUZ est une application de caisse moderne et complète, optimisée pour usage tactile, construite avec React et Node.js. L'application propose une interface professionnelle et épurée conçue pour les environnements commerciaux, mettant l'accent sur la simplicité et l'efficacité. Elle inclut l'authentification utilisateur, un mode démonstration, la gestion complète des produits et transactions, ainsi qu'un point de vente fonctionnel.
 
 ## System Architecture
 
@@ -31,21 +31,35 @@ The application follows a modern full-stack architecture with clear separation o
 - **User Management**: User profiles with first name, last name, and demo flags
 - **Security**: Password validation with Zod schemas
 
+### Point of Sale Features
+- **Product Management**: Complete CRUD operations for products with categories
+- **Inventory Tracking**: Stock management with real-time updates
+- **Transaction Processing**: Support for cash, card, and check payments
+- **Shopping Cart**: Interactive cart with quantity management
+- **Categories**: Color-coded product organization system
+
 ### Database Schema
 - **Users Table**: Stores user accounts with email, password, and profile information
 - **Sessions Table**: Manages authentication tokens with expiration
+- **Categories Table**: Product categories with custom colors
+- **Products Table**: Complete product catalog with pricing, stock, and barcodes
+- **Transactions Table**: Sales records with payment methods and totals
+- **Transaction Items Table**: Detailed line items for each sale
 - **Drizzle ORM**: Type-safe database queries with PostgreSQL dialect
 
-### UI Design System
-- **Color Palette**: Professional blue theme (#2F80ED primary, #56CCF2 secondary, #27AE60 accent)
+### User Interface
+- **Dashboard**: Overview with quick actions and daily statistics
+- **POS Interface**: Touch-optimized point of sale with product grid and cart
+- **Product Management**: Administrative interface for catalog management
+- **Color Palette**: Professional FLOUZ theme (#2F80ED primary, #56CCF2 secondary, #27AE60 accent)
 - **Typography**: Inter font family with consistent weight hierarchy
 - **Components**: Comprehensive UI component library based on Radix UI
 - **Responsive**: Touch-optimized interface for retail environments
 
 ### Storage Architecture
-- **Database Storage**: PostgreSQL for production with Neon Database
-- **Memory Storage**: Fallback in-memory storage for development
+- **Memory Storage**: In-memory storage with demo data for development and testing
 - **Interface Pattern**: Storage abstraction layer for easy switching between implementations
+- **Demo Data**: Pre-populated categories and products for immediate testing
 
 ## Data Flow
 
