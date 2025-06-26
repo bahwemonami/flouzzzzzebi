@@ -57,9 +57,9 @@ export default function Products() {
     mutationFn: async (data: ProductFormData) => {
       const productData: InsertProduct = {
         name: data.name,
-        price: parseFloat(data.price),
-        categoryId: data.categoryId ? parseInt(data.categoryId) : null,
-        stock: data.stock ? parseInt(data.stock) : null,
+        price: data.price,
+        categoryId: data.categoryId ? Number(data.categoryId) : null,
+        stock: data.stock ? Number(data.stock) : null,
         barcode: data.barcode || null,
       };
       return await apiRequest("/api/products", "POST", productData);
