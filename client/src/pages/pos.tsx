@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Layout from "@/components/Layout";
 import { Plus, Minus, ShoppingCart, CreditCard, Banknote, Receipt } from "lucide-react";
 import type { Product, Category, CartItem, CheckoutData } from "@shared/schema";
 
@@ -129,8 +130,8 @@ export default function POS() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
-      <div className="max-w-7xl mx-auto">
+    <Layout title="Point de Vente">
+      <div className="p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Products Section */}
           <div className="lg:col-span-2">
@@ -314,6 +315,6 @@ export default function POS() {
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
