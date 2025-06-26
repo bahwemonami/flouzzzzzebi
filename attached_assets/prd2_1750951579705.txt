@@ -1,0 +1,67 @@
+PRD Design — Application de caisse React
+1. Charte graphique
+Couleurs principales
+Usage	Couleur HEX	Description
+Couleur principale	#2F80ED	Bleu vif pour boutons et actions
+Couleur secondaire	#56CCF2	Bleu clair pour surlignage
+Couleur d’accentuation	#27AE60	Vert doux pour confirmations
+
+Couleurs neutres
+Usage	Couleur HEX	Description
+Fond principal	#F9FAFB	Très clair, presque blanc
+Texte principal	#333333	Gris foncé pour bonne lisibilité
+Texte secondaire	#666666	Gris moyen, pour info moins importante
+Bordures/séparateurs	#E0E0E0	Gris clair, discret
+
+2. Typographie
+Police principale : Inter, sans-serif
+
+Poids utilisés :
+
+Titres : 600-700 (semi-bold / bold)
+
+Texte courant : 400 (normal)
+
+Boutons : 600 (semi-bold)
+
+3. UI / UX
+Boutons arrondis (border-radius : 6-8px)
+
+Gros boutons (minimum 44px hauteur) pour usage tactile
+
+Espacement généreux (padding/marges) pour éviter clics accidentels
+
+Feedback visuel clair au clic (changement couleur/ombre)
+
+Icônes simples et intuitives
+
+Design épuré avec beaucoup d’espaces blancs
+
+4. Thème
+Thème clair uniquement
+
+Fond très clair (#F9FAFB) pour une bonne lisibilité en environnement lumineux
+
+5. Écran d’accueil
+Logo centré avec fade-in léger au chargement
+
+Slogan : « Votre caisse, simple et efficace »
+
+Bouton login tactile en bas de l’écran
+
+Couleurs respectant la charte
+
+6. Animations et interactions
+Interface simple et efficace
+
+Pas d’animations complexes, juste un fade-in au chargement
+
+Transitions fluides sans effets lourds
+
+7. Responsive
+Interface 100% responsive
+
+Adaptée pour desktop, tablette et smartphone
+
+Boutons et éléments UI optimisés pour tactile
+
