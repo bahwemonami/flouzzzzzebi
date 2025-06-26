@@ -13,7 +13,7 @@ import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
-import { Plus, Tag, Palette, Package, Edit, Search } from "lucide-react";
+import { Plus, Tag, Palette, Package, Edit, Search, Trash2 } from "lucide-react";
 import type { Category, InsertCategory, Product } from "@shared/schema";
 
 const categoryFormSchema = z.object({
@@ -69,6 +69,26 @@ export default function Categories() {
     },
   });
 
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest(`/api/categories/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      toast({
+        title: "Catégorie supprimée",
+        description: "La catégorie a été supprimée avec succès",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
@@ -86,6 +106,22 @@ export default function Categories() {
     form.setValue("name", category.name);
     form.setValue("color", category.color);
     setDialogOpen(true);
+  };
+
+  const handleDeleteCategory = (category: Category) => {
+    const productCount = getProductCountByCategory(category.id);
+    if (productCount > 0) {
+      toast({
+        title: "Impossible de supprimer",
+        description: `Cette catégorie contient ${productCount} produit${productCount > 1 ? 's' : ''}. Supprimez d'abord les produits associés.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?`)) {
+      deleteCategoryMutation.mutate(category.id);
+    }
   };
 
   const getProductCountByCategory = (categoryId: number) => {
@@ -353,14 +389,24 @@ export default function Categories() {
                         />
                         {category.name}
                       </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditCategory(category)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCategory(category)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category)}
+                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
