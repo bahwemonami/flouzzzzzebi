@@ -8,6 +8,8 @@ import Welcome from "@/pages/welcome";
 import Dashboard from "@/pages/dashboard";
 import POS from "@/pages/pos";
 import Products from "@/pages/products";
+import Categories from "@/pages/categories";
+import Transactions from "@/pages/transactions";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +37,8 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/pos" component={POS} />
           <Route path="/products" component={Products} />
+          <Route path="/categories" component={Categories} />
+          <Route path="/transactions" component={Transactions} />
         </>
       )}
       <Route component={NotFound} />

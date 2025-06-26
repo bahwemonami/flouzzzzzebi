@@ -1,45 +1,70 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import Layout from "@/components/Layout";
-import { Plus, Tags, Edit, Palette } from "lucide-react";
-import { insertCategorySchema } from "@shared/schema";
-import type { Category, InsertCategory } from "@shared/schema";
 import { z } from "zod";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/Layout";
+import { Plus, Tag, Palette, Package, Edit, Search } from "lucide-react";
+import type { Category, InsertCategory, Product } from "@shared/schema";
 
 const categoryFormSchema = z.object({
-  name: z.string().min(1, "Nom requis"),
-  color: z.string().min(1, "Couleur requise"),
+  name: z.string().min(1, "Le nom est requis").max(50, "Le nom ne peut pas dépasser 50 caractères"),
+  color: z.string().min(1, "La couleur est requise"),
 });
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
 
-const predefinedColors = [
-  "#2F80ED", "#56CCF2", "#27AE60", "#F2994A",
-  "#EB5757", "#BB6BD9", "#219653", "#F2C94C",
-  "#6FCF97", "#56CCF2", "#9B51E0", "#FF6B35"
-];
-
 export default function Categories() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: products = [] } = useQuery<any[]>({
+  const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: CategoryFormData) => {
+      const categoryData: InsertCategory = {
+        name: data.name,
+        color: data.color,
+      };
+      return await apiRequest("/api/categories", {
+        method: "POST",
+        body: JSON.stringify(categoryData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setDialogOpen(false);
+      setEditingCategory(null);
+      form.reset();
+      toast({
+        title: "Catégorie créée",
+        description: "La catégorie a été créée avec succès",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const form = useForm<CategoryFormData>({
@@ -50,179 +75,317 @@ export default function Categories() {
     },
   });
 
-  const createCategoryMutation = useMutation({
-    mutationFn: async (data: CategoryFormData) => {
-      const categoryData: InsertCategory = {
-        name: data.name,
-        color: data.color,
-      };
-      const res = await apiRequest("POST", "/api/categories", categoryData);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      setIsDialogOpen(false);
-      form.reset();
-      toast({
-        title: "Catégorie créée",
-        description: "La catégorie a été ajoutée avec succès",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de créer la catégorie",
-        variant: "destructive",
-      });
-    },
-  });
-
   const onSubmit = (data: CategoryFormData) => {
     createCategoryMutation.mutate(data);
   };
 
-  const getCategoryProductCount = (categoryId: number) => {
-    return products.filter((p: any) => p.categoryId === categoryId).length;
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    form.setValue("name", category.name);
+    form.setValue("color", category.color);
+    setDialogOpen(true);
   };
+
+  const getProductCountByCategory = (categoryId: number) => {
+    return products.filter(p => p.categoryId === categoryId && p.isActive).length;
+  };
+
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const predefinedColors = [
+    { name: "Bleu FLOUZ", value: "#2F80ED" },
+    { name: "Vert", value: "#27AE60" },
+    { name: "Bleu clair", value: "#56CCF2" },
+    { name: "Orange", value: "#F2994A" },
+    { name: "Rouge", value: "#EB5757" },
+    { name: "Violet", value: "#9B59B6" },
+    { name: "Jaune", value: "#F2C94C" },
+    { name: "Rose", value: "#E91E63" },
+    { name: "Indigo", value: "#3F51B5" },
+    { name: "Teal", value: "#009688" },
+    { name: "Gris", value: "#828282" },
+    { name: "Marron", value: "#8D6E63" },
+  ];
+
+  if (isLoading) {
+    return (
+      <Layout title="Catégories">
+        <div className="p-6">
+          <div className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+            <p className="mt-4 text-gray-600">Chargement...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Catégories">
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <Tags className="w-8 h-8" style={{ color: '#2F80ED' }} />
+            <Tag className="w-8 h-8" style={{ color: '#2F80ED' }} />
             <div>
               <h2 className="text-xl font-semibold" style={{ color: '#333333' }}>
-                Gestion des Catégories
+                Catégories de Produits
               </h2>
               <p className="text-sm" style={{ color: '#666666' }}>
-                {categories.length} catégorie{categories.length !== 1 ? 's' : ''}
+                {categories.length} catégorie{categories.length !== 1 ? 's' : ''} créée{categories.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-touch" style={{ backgroundColor: '#2F80ED' }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle Catégorie
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Ajouter une catégorie</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom de la catégorie</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Boissons" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Rechercher une catégorie..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setEditingCategory(null);
+                form.reset();
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button className="btn-touch whitespace-nowrap" style={{ backgroundColor: '#2F80ED' }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle Catégorie
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingCategory ? "Modifier la catégorie" : "Créer une nouvelle catégorie"}
+                  </DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nom de la catégorie</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ex: Boissons, Snacks, Plats..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Couleur</FormLabel>
-                        <FormControl>
-                          <div className="space-y-3">
-                            <Input type="color" {...field} className="w-full h-12" />
-                            <div className="grid grid-cols-6 gap-2">
-                              {predefinedColors.map((color) => (
-                                <button
-                                  key={color}
-                                  type="button"
-                                  className="w-8 h-8 rounded-full border-2 border-gray-300 hover:scale-110 transition-transform"
-                                  style={{ backgroundColor: color }}
-                                  onClick={() => field.onChange(color)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="color"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Couleur d'identification</FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choisir une couleur">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded-full border" 
+                                      style={{ backgroundColor: field.value }}
+                                    />
+                                    {predefinedColors.find(c => c.value === field.value)?.name || "Couleur personnalisée"}
+                                  </div>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {predefinedColors.map((color) => (
+                                  <SelectItem key={color.value} value={color.value}>
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-4 h-4 rounded-full border" 
+                                        style={{ backgroundColor: color.value }}
+                                      />
+                                      {color.name}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="flex gap-2 pt-4">
-                    <Button type="submit" disabled={createCategoryMutation.isPending} className="flex-1">
-                      {createCategoryMutation.isPending ? "Création..." : "Créer"}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Annuler
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                    <div className="flex justify-end space-x-3 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setDialogOpen(false);
+                          setEditingCategory(null);
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={createCategoryMutation.isPending}
+                        style={{ backgroundColor: '#2F80ED' }}
+                      >
+                        {createCategoryMutation.isPending ? "En cours..." : editingCategory ? "Modifier" : "Créer"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#666666' }}>
+                    Total catégories
+                  </p>
+                  <p className="text-3xl font-bold" style={{ color: '#333333' }}>
+                    {categories.length}
+                  </p>
+                </div>
+                <Tag className="w-8 h-8" style={{ color: '#2F80ED' }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#666666' }}>
+                    Produits associés
+                  </p>
+                  <p className="text-3xl font-bold" style={{ color: '#333333' }}>
+                    {products.filter(p => p.isActive).length}
+                  </p>
+                </div>
+                <Package className="w-8 h-8" style={{ color: '#27AE60' }} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#666666' }}>
+                    Catégorie la plus utilisée
+                  </p>
+                  <p className="text-lg font-bold" style={{ color: '#333333' }}>
+                    {categories.length > 0 ? 
+                      categories.reduce((prev, current) => 
+                        getProductCountByCategory(current.id) > getProductCountByCategory(prev.id) ? current : prev
+                      ).name || "Aucune"
+                      : "Aucune"
+                    }
+                  </p>
+                </div>
+                <Palette className="w-8 h-8" style={{ color: '#56CCF2' }} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Categories Grid */}
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <Card>
-            <CardContent className="p-12 text-center">
-              <Tags className="w-16 h-16 mx-auto mb-4" style={{ color: '#666666' }} />
+            <CardContent className="text-center py-12">
+              <Tag className="w-16 h-16 mx-auto mb-4" style={{ color: '#666666' }} />
               <h3 className="text-lg font-semibold mb-2" style={{ color: '#333333' }}>
-                Aucune catégorie
+                {searchTerm ? "Aucune catégorie trouvée" : "Aucune catégorie créée"}
               </h3>
               <p className="text-sm mb-4" style={{ color: '#666666' }}>
-                Organisez vos produits en créant des catégories
+                {searchTerm 
+                  ? "Essayez avec un autre terme de recherche"
+                  : "Créez votre première catégorie pour organiser vos produits"
+                }
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} style={{ backgroundColor: '#2F80ED' }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Créer la première catégorie
-              </Button>
+              {!searchTerm && (
+                <Button 
+                  onClick={() => setDialogOpen(true)}
+                  style={{ backgroundColor: '#2F80ED' }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Créer une catégorie
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {categories.map((category) => {
-              const productCount = getCategoryProductCount(category.id);
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredCategories.map((category) => {
+              const productCount = getProductCountByCategory(category.id);
+              
               return (
-                <Card key={category.id} className="transition-transform hover:scale-105">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div 
-                        className="w-12 h-12 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: category.color + '20' }}
+                <Card key={category.id} className="relative overflow-hidden hover:shadow-lg transition-shadow group">
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-3"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <CardHeader className="pt-6 pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <div 
+                          className="w-4 h-4 rounded-full ring-2 ring-white shadow-sm"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCategory(category)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Tags className="w-6 h-6" style={{ color: category.color }} />
-                      </div>
-                      <Button variant="ghost" size="sm">
                         <Edit className="w-4 h-4" />
                       </Button>
                     </div>
-
-                    <h3 className="font-semibold text-lg mb-2" style={{ color: '#333333' }}>
-                      {category.name}
-                    </h3>
-
+                  </CardHeader>
+                  <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm" style={{ color: '#666666' }}>Produits:</span>
-                        <Badge variant="secondary">
+                        <span className="text-sm" style={{ color: '#666666' }}>
+                          Produits associés
+                        </span>
+                        <Badge 
+                          variant="secondary"
+                          style={{ 
+                            backgroundColor: category.color + '20',
+                            color: category.color,
+                            border: `1px solid ${category.color}40`
+                          }}
+                        >
                           {productCount}
                         </Badge>
                       </div>
-
+                      
                       <div className="flex items-center justify-between">
-                        <span className="text-sm" style={{ color: '#666666' }}>Couleur:</span>
-                        <div className="flex items-center space-x-2">
+                        <span className="text-sm" style={{ color: '#666666' }}>
+                          Couleur
+                        </span>
+                        <div className="flex items-center gap-2">
                           <div 
-                            className="w-4 h-4 rounded-full border"
+                            className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
                             style={{ backgroundColor: category.color }}
                           />
                           <span className="text-xs font-mono" style={{ color: '#666666' }}>
@@ -231,9 +394,13 @@ export default function Categories() {
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t" style={{ borderColor: '#E0E0E0' }}>
+                      <div className="pt-2 border-t" style={{ borderColor: '#E0E0E0' }}>
                         <p className="text-xs" style={{ color: '#666666' }}>
-                          Créée le {new Date(category.createdAt || '').toLocaleDateString('fr-FR')}
+                          Créée le {new Date(category.createdAt || '').toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
                         </p>
                       </div>
                     </div>
@@ -242,38 +409,6 @@ export default function Categories() {
               );
             })}
           </div>
-        )}
-
-        {/* Color Usage Stats */}
-        {categories.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="w-5 h-5" />
-                Répartition des couleurs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {categories.map((category) => (
-                  <div key={category.id} className="text-center">
-                    <div 
-                      className="w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center"
-                      style={{ backgroundColor: category.color }}
-                    >
-                      <Tags className="w-6 h-6 text-white" />
-                    </div>
-                    <p className="text-sm font-medium" style={{ color: '#333333' }}>
-                      {category.name}
-                    </p>
-                    <p className="text-xs" style={{ color: '#666666' }}>
-                      {getCategoryProductCount(category.id)} produits
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         )}
       </div>
     </Layout>

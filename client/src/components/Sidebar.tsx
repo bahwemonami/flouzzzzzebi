@@ -30,9 +30,6 @@ const navigation = [
   { name: "Produits", href: "/products", icon: Package },
   { name: "Catégories", href: "/categories", icon: Tags },
   { name: "Transactions", href: "/transactions", icon: Receipt },
-  { name: "Rapports", href: "/reports", icon: BarChart3 },
-  { name: "Clients", href: "/customers", icon: Users },
-  { name: "Paramètres", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
