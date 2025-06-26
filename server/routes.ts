@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertUserSchema } from "@shared/schema";
+import { loginSchema, insertUserSchema, insertCategorySchema, insertProductSchema, checkoutSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Middleware to check authentication
