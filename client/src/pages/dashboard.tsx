@@ -169,7 +169,11 @@ export default function Dashboard() {
                           Transaction #{transaction.id}
                         </p>
                         <p className="text-xs" style={{ color: '#666666' }}>
-                          {new Date(transaction.createdAt || '').toLocaleTimeString('fr-FR')}
+                          {new Date(transaction.createdAt || '').toLocaleTimeString('fr-FR')} - {
+                            transaction.paymentMethod === 'cash' ? 'Espèces' :
+                            transaction.paymentMethod === 'card' ? 'Carte' :
+                            transaction.paymentMethod === 'check' ? 'Chèque' : transaction.paymentMethod
+                          }
                         </p>
                       </div>
                       <p className="font-semibold" style={{ color: '#2F80ED' }}>
@@ -188,26 +192,32 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Produits populaires</CardTitle>
+              <CardTitle>Alertes stock</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {products.slice(0, 5).map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#F9FAFB' }}>
-                    <div>
-                      <p className="font-medium text-sm" style={{ color: '#333333' }}>
-                        {product.name}
-                      </p>
-                      <p className="text-xs" style={{ color: '#666666' }}>
-                        Stock: {product.stock || 'Illimité'}
+              {lowStockProducts > 0 ? (
+                <div className="space-y-3">
+                  {products.filter(p => p.stock !== null && p.stock < 10).slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#FFF3CD', borderColor: '#F2994A', borderWidth: '1px' }}>
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: '#333333' }}>
+                          {product.name}
+                        </p>
+                        <p className="text-xs" style={{ color: '#F2994A' }}>
+                          Stock critique: {product.stock} restant
+                        </p>
+                      </div>
+                      <p className="font-semibold" style={{ color: '#F2994A' }}>
+                        ⚠️ Stock faible
                       </p>
                     </div>
-                    <p className="font-semibold" style={{ color: '#27AE60' }}>
-                      {Number(product.price).toFixed(2)} €
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center py-8 text-sm" style={{ color: '#27AE60' }}>
+                  ✓ Tous les stocks sont corrects
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
