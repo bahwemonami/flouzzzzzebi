@@ -77,9 +77,9 @@ export default function UserManagement() {
       if (editingUser) {
         const { password, ...updateData } = data;
         const payload = password ? data : updateData;
-        return await apiRequest(`/api/master/users/${editingUser.id}`, "PUT", payload);
+        return await apiRequest("PUT", `/api/master/users/${editingUser.id}`, payload);
       } else {
-        return await apiRequest("/api/master/users", "POST", data);
+        return await apiRequest("POST", "/api/master/users", data);
       }
     },
     onSuccess: () => {
@@ -103,7 +103,7 @@ export default function UserManagement() {
 
   const toggleUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/master/users/${id}/toggle`, "PUT");
+      return await apiRequest("PUT", `/api/master/users/${id}/toggle`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
@@ -123,7 +123,7 @@ export default function UserManagement() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/master/users/${id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/master/users/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
