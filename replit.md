@@ -38,15 +38,23 @@ The application follows a modern full-stack architecture with clear separation o
 - **Transaction Processing**: Support for cash, card, and check payments
 - **Shopping Cart**: Interactive cart with quantity management
 - **Categories**: Color-coded product organization system
+- **Cash Register Closure**: Daily closure functionality with automatic Telegram reporting
+- **Telegram Integration**: Automated daily sales reports sent to configured Telegram groups
 
 ### Database Schema
-- **Users Table**: Stores user accounts with email, password, and profile information
+- **Users Table**: Stores user accounts with email, password, profile information, and Telegram configuration
 - **Sessions Table**: Manages authentication tokens with expiration
 - **Categories Table**: Product categories with custom colors
 - **Products Table**: Complete product catalog with pricing, stock, and barcodes
 - **Transactions Table**: Sales records with payment methods and totals
 - **Transaction Items Table**: Detailed line items for each sale
 - **Drizzle ORM**: Type-safe database queries with PostgreSQL dialect
+
+### Telegram Integration
+- **User Configuration**: Chat ID and Bot Token fields for each user
+- **Daily Reports**: Automated end-of-day sales summaries
+- **Report Content**: Total revenue, cash/card/check breakdowns, transaction count, average ticket
+- **Cash Register Closure**: One-click day closure with automatic logout and Telegram notification
 
 ### User Interface
 - **Dashboard**: Overview with quick actions and daily statistics
@@ -125,6 +133,7 @@ The application follows a modern full-stack architecture with clear separation o
 Changelog:
 - June 26, 2025. Initial setup
 - June 28, 2025. Implémentation du système de compte master avec analytics et gestion utilisateurs
+- June 28, 2025. Ajout de la fonctionnalité de clôture de caisse avec notifications Telegram
 
 ## User Preferences
 
