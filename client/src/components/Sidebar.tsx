@@ -16,7 +16,9 @@ import {
   Menu,
   X,
   Users,
-  Tags
+  Tags,
+  TrendingUp,
+  Shield
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,6 +32,11 @@ const navigation = [
   { name: "Produits", href: "/products", icon: Package },
   { name: "Catégories", href: "/categories", icon: Tags },
   { name: "Transactions", href: "/transactions", icon: Receipt },
+];
+
+const masterNavigation = [
+  { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Gestion Utilisateurs", href: "/user-management", icon: Users },
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
@@ -120,16 +127,25 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                     {(user as any)?.email}
                   </p>
                 </div>
-                {(user as any)?.isDemo && (
-                  <span className="px-2 py-1 text-xs rounded-full bg-[#56CCF2] text-white">
-                    DEMO
-                  </span>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {(user as any)?.isDemo && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-[#56CCF2] text-white">
+                      DEMO
+                    </span>
+                  )}
+                  {(user as any)?.isMaster && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-[#E74C3C] text-white flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      MASTER
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {/* Navigation principale */}
               {navigation.map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
@@ -150,6 +166,40 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   </Button>
                 );
               })}
+
+              {/* Navigation master - uniquement pour les comptes master */}
+              {(user as any)?.isMaster && (
+                <>
+                  <div className="pt-4 pb-2">
+                    <div className="flex items-center gap-2 px-2">
+                      <Shield className="w-4 h-4" style={{ color: '#E74C3C' }} />
+                      <span className="text-xs font-semibold" style={{ color: '#E74C3C' }}>
+                        ADMINISTRATION
+                      </span>
+                    </div>
+                  </div>
+                  {masterNavigation.map((item) => {
+                    const isActive = location === item.href;
+                    const Icon = item.icon;
+                    
+                    return (
+                      <Button
+                        key={item.name}
+                        variant={isActive ? "default" : "ghost"}
+                        className={`w-full justify-start btn-touch ${isActive ? 'shadow-sm' : ''}`}
+                        style={{ 
+                          backgroundColor: isActive ? '#E74C3C' : 'transparent',
+                          color: isActive ? 'white' : '#333333'
+                        }}
+                        onClick={() => handleNavigation(item.href)}
+                      >
+                        <Icon className="w-4 h-4 mr-3" />
+                        {item.name}
+                      </Button>
+                    );
+                  })}
+                </>
+              )}
             </nav>
 
             {/* Footer */}

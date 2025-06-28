@@ -8,6 +8,8 @@ interface User {
   firstName: string | null;
   lastName: string | null;
   isDemo: boolean;
+  isMaster: boolean;
+  isActive: boolean;
 }
 
 interface AuthResponse {
