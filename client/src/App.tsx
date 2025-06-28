@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Welcome from "@/pages/welcome";
+import UserSelection from "@/pages/user-selection";
 import Dashboard from "@/pages/dashboard";
 import MasterDashboard from "@/pages/master-dashboard";
 import POS from "@/pages/pos";
@@ -16,7 +17,7 @@ import UserManagement from "@/pages/user-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, isMaster, hasSelectedUser } = useAuth();
 
   if (isLoading) {
     return (
@@ -35,7 +36,9 @@ function Router() {
     <Switch>
       {!isAuthenticated ? (
         <Route path="/" component={Welcome} />
-      ) : (user as any)?.isMaster ? (
+      ) : !hasSelectedUser ? (
+        <Route path="/" component={UserSelection} />
+      ) : isMaster ? (
         // Interface master - uniquement administration
         <>
           <Route path="/" component={MasterDashboard} />

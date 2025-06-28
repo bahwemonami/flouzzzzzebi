@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
+import type { User as UserType } from "@shared/schema";
 
 export default function UserSelection() {
   const { users, selectUser, account } = useAuth();
@@ -30,7 +31,7 @@ export default function UserSelection() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {users.map((user) => (
+            {users.map((user: UserType) => (
               <button
                 key={user.id}
                 onClick={() => setSelectedUserId(user.id)}

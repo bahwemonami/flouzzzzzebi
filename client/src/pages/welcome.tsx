@@ -13,7 +13,7 @@ import { ScanBarcode, Mail, Lock, LogIn, Eye, UserPlus } from "lucide-react";
 
 export default function Welcome() {
   const { toast } = useToast();
-  const { login, demoLogin } = useAuth();
+  const { login } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
 
   const form = useForm<LoginData>({
@@ -42,7 +42,10 @@ export default function Welcome() {
 
   const handleDemoLogin = async () => {
     try {
-      await demoLogin.mutateAsync();
+      await login.mutateAsync({
+        email: "demo@flouz.com",
+        password: "demo123"
+      });
       toast({
         title: "Mode démonstration",
         description: "Bienvenue dans l'interface de démonstration !",
@@ -166,10 +169,10 @@ export default function Welcome() {
                 className="w-full btn-touch font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
                 style={{ borderColor: '#E0E0E0', color: '#333333' }}
                 onClick={handleDemoLogin}
-                disabled={demoLogin.isPending}
+                disabled={login.isPending}
               >
                 <Eye className="mr-2 w-4 h-4" style={{ color: '#56CCF2' }} />
-                {demoLogin.isPending ? "Chargement..." : "Mode démonstration"}
+                {login.isPending ? "Chargement..." : "Mode démonstration"}
               </Button>
               
               <Button 
