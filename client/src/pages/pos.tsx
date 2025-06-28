@@ -501,17 +501,7 @@ export default function POS() {
                         </div>
                       </Button>
 
-                      <Button
-                        onClick={() => setCloseRegisterDialogOpen(true)}
-                        variant="destructive"
-                        className="w-full btn-touch"
-                        style={{ backgroundColor: '#E74C3C' }}
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <LogOut className="w-5 h-5" />
-                          <span>Clôturer la caisse</span>
-                        </div>
-                      </Button>
+
                     </div>
                   </>
                 )}
