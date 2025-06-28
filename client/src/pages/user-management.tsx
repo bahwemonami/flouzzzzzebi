@@ -22,7 +22,8 @@ import {
   Search,
   Mail,
   Calendar,
-  Shield
+  Shield,
+  Trash2
 } from "lucide-react";
 
 interface User {
@@ -120,6 +121,26 @@ export default function UserManagement() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest(`/api/master/users/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été supprimé définitivement",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: UserFormData) => {
     createUserMutation.mutate(data);
   };
@@ -147,6 +168,21 @@ export default function UserManagement() {
     }
     
     toggleUserMutation.mutate(user.id);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    if (user.isMaster) {
+      toast({
+        title: "Suppression interdite",
+        description: "Le compte master ne peut pas être supprimé",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (confirm(`Êtes-vous sûr de vouloir supprimer définitivement l'utilisateur "${user.email}" ?\n\nCette action est irréversible et supprimera toutes ses données.`)) {
+      deleteUserMutation.mutate(user.id);
+    }
   };
 
   const filteredUsers = users.filter(user =>
@@ -491,6 +527,16 @@ export default function UserManagement() {
                       className={`h-8 w-8 p-0 ${user.isActive ? 'hover:bg-red-50 hover:text-red-600' : 'hover:bg-green-50 hover:text-green-600'}`}
                     >
                       {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteUser(user)}
+                      disabled={user.isMaster}
+                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>

@@ -35,15 +35,21 @@ function Router() {
     <Switch>
       {!isAuthenticated ? (
         <Route path="/" component={Welcome} />
+      ) : (user as any)?.isMaster ? (
+        // Interface master - uniquement administration
+        <>
+          <Route path="/" component={MasterDashboard} />
+          <Route path="/analytics" component={Analytics} />
+          <Route path="/user-management" component={UserManagement} />
+        </>
       ) : (
+        // Interface utilisateur normal - uniquement caisse
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/pos" component={POS} />
           <Route path="/products" component={Products} />
           <Route path="/categories" component={Categories} />
           <Route path="/transactions" component={Transactions} />
-          <Route path="/analytics" component={Analytics} />
-          <Route path="/user-management" component={UserManagement} />
         </>
       )}
       <Route component={NotFound} />
