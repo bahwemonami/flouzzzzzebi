@@ -300,6 +300,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Master user (employee) management routes
+  app.get("/api/master/users", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/master/users", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.put("/api/master/users/:id", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(id, userData);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur introuvable" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/master/users/:id/toggle", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.toggleUserStatus(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur introuvable" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.delete("/api/master/users/:id", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteUser(id);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Impossible de supprimer cet utilisateur" });
+      }
+
+      res.json({ message: "Utilisateur supprimé" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   // Category routes
   app.get("/api/categories", requireAuth, async (req, res) => {
     try {
