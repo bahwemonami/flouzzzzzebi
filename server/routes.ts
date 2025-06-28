@@ -23,8 +23,15 @@ async function requireAuth(req: Request, res: Response, next: Function) {
     return res.status(401).json({ message: "Compte introuvable" });
   }
 
+  // Récupérer l'utilisateur sélectionné si disponible
+  let selectedUser = null;
+  if (session.selectedUserId) {
+    selectedUser = await storage.getUser(session.selectedUserId);
+  }
+
   (req as any).session = session;
   (req as any).account = account;
+  (req as any).selectedUser = selectedUser;
   next();
 }
 
@@ -592,6 +599,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const account = (req as any).account;
       const selectedUser = (req as any).selectedUser;
+      
+      // Vérifier qu'un utilisateur est sélectionné
+      if (!selectedUser) {
+        return res.status(400).json({ 
+          message: "Aucun employé sélectionné. Veuillez vous reconnecter." 
+        });
+      }
       
       // Vérifier que l'account a les informations Telegram
       if (!account.telegramChatId || !account.telegramBotToken) {
