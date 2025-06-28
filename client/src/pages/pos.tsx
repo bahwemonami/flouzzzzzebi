@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
-import { Plus, Minus, ShoppingCart, CreditCard, Banknote, Receipt, Search, ScanBarcode, Calculator, Trash2 } from "lucide-react";
+import { Plus, Minus, ShoppingCart, CreditCard, Banknote, Receipt, Search, ScanBarcode, Calculator, Trash2, LogOut } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Product, Category, CartItem, CheckoutData } from "@shared/schema";
 
 interface CartItemWithProduct extends CartItem {
@@ -26,6 +27,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "check">("cash");
   const [amountReceived, setAmountReceived] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [closeRegisterDialogOpen, setCloseRegisterDialogOpen] = useState(false);
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -51,6 +53,33 @@ export default function POS() {
     onError: (error) => {
       toast({
         title: "Erreur de transaction",
+        description: error instanceof Error ? error.message : "Une erreur est survenue",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const closeRegisterMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/close-register");
+      return res.json();
+    },
+    onSuccess: () => {
+      setCloseRegisterDialogOpen(false);
+      
+      toast({
+        title: "Caisse clôturée",
+        description: "Un rapport a été envoyé via Telegram. Vous allez être déconnecté.",
+      });
+
+      // Déconnexion après 2 secondes
+      setTimeout(() => {
+        window.location.href = "/api/auth/logout";
+      }, 2000);
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
         description: error instanceof Error ? error.message : "Une erreur est survenue",
         variant: "destructive",
       });
@@ -494,6 +523,18 @@ export default function POS() {
                         <div className="flex items-center justify-center gap-2">
                           <Trash2 className="w-4 h-4" />
                           <span>Vider le panier</span>
+                        </div>
+                      </Button>
+
+                      <Button
+                        onClick={() => setCloseRegisterDialogOpen(true)}
+                        variant="destructive"
+                        className="w-full btn-touch"
+                        style={{ backgroundColor: '#E74C3C' }}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <LogOut className="w-5 h-5" />
+                          <span>Clôturer la caisse</span>
                         </div>
                       </Button>
                     </div>

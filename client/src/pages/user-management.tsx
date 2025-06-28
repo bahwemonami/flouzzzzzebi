@@ -73,6 +73,8 @@ export default function UserManagement() {
       isDemo: false,
       isMaster: false,
       isActive: true,
+      telegramChatId: "",
+      telegramBotToken: "",
     },
   });
 
@@ -157,6 +159,8 @@ export default function UserManagement() {
     form.setValue("isDemo", user.isDemo);
     form.setValue("isMaster", user.isMaster);
     form.setValue("isActive", user.isActive);
+    form.setValue("telegramChatId", user.telegramChatId || "");
+    form.setValue("telegramBotToken", user.telegramBotToken || "");
     form.setValue("password", ""); // Don't prefill password
     setDialogOpen(true);
   };
