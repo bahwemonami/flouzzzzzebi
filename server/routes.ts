@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertUserSchema, insertCategorySchema, insertProductSchema, checkoutSchema } from "@shared/schema";
+import { loginSchema, insertAccountSchema, insertUserSchema, insertCategorySchema, insertProductSchema, checkoutSchema, selectUserSchema } from "@shared/schema";
 import { getDailySummary, formatDailySummaryMessage, sendTelegramMessage } from "./telegram";
 import { z } from "zod";
 
@@ -13,17 +13,23 @@ async function requireAuth(req: Request, res: Response, next: Function) {
     return res.status(401).json({ message: "Token requis" });
   }
 
-  const user = await storage.getUserBySessionToken(token);
-  if (!user) {
+  const session = await storage.getSession(token);
+  if (!session) {
     return res.status(401).json({ message: "Session invalide" });
   }
 
-  (req as any).user = user;
+  const account = await storage.getAccount(session.accountId);
+  if (!account) {
+    return res.status(401).json({ message: "Compte introuvable" });
+  }
+
+  (req as any).session = session;
+  (req as any).account = account;
   next();
 }
 
 async function requireMaster(req: Request, res: Response, next: Function) {
-  if (!(req as any).user?.isMaster) {
+  if (!(req as any).account?.isMaster) {
     return res.status(403).json({ message: "Accès réservé au compte master" });
   }
   next();

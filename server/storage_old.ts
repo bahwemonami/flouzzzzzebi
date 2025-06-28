@@ -85,7 +85,7 @@ export class MemStorage implements IStorage {
     this.createDemoData();
   }
 
-  private createDemoAccounts() {
+  private async createDemoAccounts() {
     // Créer le compte démo
     const demoAccount: Account = {
       id: this.currentAccountId++,
@@ -137,13 +137,13 @@ export class MemStorage implements IStorage {
     this.users.set(masterUser.id, masterUser);
   }
 
-  private createDemoData() {
+  private async createDemoData() {
     // Create demo categories
     const categories = [
-      { name: "Boissons", color: "#3B82F6" },
-      { name: "Snacks", color: "#EF4444" },
-      { name: "Repas", color: "#10B981" },
-      { name: "Desserts", color: "#F59E0B" },
+      { name: "Boissons", color: "#2F80ED" },
+      { name: "Snacks", color: "#56CCF2" },
+      { name: "Plats", color: "#27AE60" },
+      { name: "Desserts", color: "#F2994A" },
     ];
 
     for (const categoryData of categories) {
@@ -381,7 +381,7 @@ export class MemStorage implements IStorage {
     const category: Category = {
       id: this.currentCategoryId++,
       name: categoryData.name,
-      color: categoryData.color,
+      color: categoryData.color ?? "#2F80ED",
       createdAt: new Date(),
     };
     this.categories.set(category.id, category);
@@ -389,11 +389,11 @@ export class MemStorage implements IStorage {
   }
 
   async updateCategory(id: number, categoryData: Partial<InsertCategory>): Promise<Category | undefined> {
-    const existing = this.categories.get(id);
-    if (!existing) return undefined;
+    const category = this.categories.get(id);
+    if (!category) return undefined;
     
     const updated: Category = {
-      ...existing,
+      ...category,
       ...categoryData,
     };
     this.categories.set(id, updated);
