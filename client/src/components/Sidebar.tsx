@@ -40,7 +40,7 @@ const masterNavigation = [
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { selectedUser, isMaster, isDemo, account, logout } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
 
@@ -116,24 +116,24 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2F80ED] to-[#56CCF2] flex items-center justify-center">
                   <span className="text-white text-sm font-semibold">
-                    {(user as any)?.firstName?.charAt(0) || 'U'}
+                    {isMaster ? <Shield className="w-4 h-4" /> : (selectedUser?.firstName?.charAt(0) || 'U')}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: '#333333' }}>
-                    {(user as any)?.firstName || 'Utilisateur'} {(user as any)?.lastName || ''}
+                    {isMaster ? 'Administrateur Master' : `${selectedUser?.firstName || 'Utilisateur'} ${selectedUser?.lastName || ''}`}
                   </p>
                   <p className="text-xs truncate" style={{ color: '#666666' }}>
-                    {(user as any)?.email}
+                    {account?.email}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  {(user as any)?.isDemo && (
+                  {isDemo && (
                     <span className="px-2 py-1 text-xs rounded-full bg-[#56CCF2] text-white">
                       DEMO
                     </span>
                   )}
-                  {(user as any)?.isMaster && (
+                  {isMaster && (
                     <span className="px-2 py-1 text-xs rounded-full bg-[#E74C3C] text-white flex items-center gap-1">
                       <Shield className="w-3 h-3" />
                       MASTER
@@ -146,7 +146,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {/* Navigation pour utilisateurs normaux uniquement */}
-              {!(user as any)?.isMaster && navigation.map((item) => {
+              {!isMaster && navigation.map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
                 
@@ -168,7 +168,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               })}
 
               {/* Navigation master - uniquement pour les comptes master */}
-              {(user as any)?.isMaster && (
+              {isMaster && (
                 <>
                   <div className="pb-2">
                     <div className="flex items-center gap-2 px-2">
