@@ -10,6 +10,8 @@ import POS from "@/pages/pos";
 import Products from "@/pages/products";
 import Categories from "@/pages/categories";
 import Transactions from "@/pages/transactions";
+import Analytics from "@/pages/analytics";
+import UserManagement from "@/pages/user-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +41,8 @@ function Router() {
           <Route path="/products" component={Products} />
           <Route path="/categories" component={Categories} />
           <Route path="/transactions" component={Transactions} />
+          <Route path="/analytics" component={Analytics} />
+          <Route path="/user-management" component={UserManagement} />
         </>
       )}
       <Route component={NotFound} />

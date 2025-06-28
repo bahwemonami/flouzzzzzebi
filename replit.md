@@ -28,8 +28,9 @@ The application follows a modern full-stack architecture with clear separation o
 ### Authentication System
 - **Login/Demo Mode**: Users can log in with credentials or use demo mode
 - **Session Management**: Token-based sessions stored in PostgreSQL
-- **User Management**: User profiles with first name, last name, and demo flags
-- **Security**: Password validation with Zod schemas
+- **User Management**: User profiles with first name, last name, demo flags, and master privileges
+- **Master Account System**: Single administrative account (flouz@mail.com) with analytics and user management capabilities
+- **Security**: Password validation with Zod schemas and role-based access control
 
 ### Point of Sale Features
 - **Product Management**: Complete CRUD operations for products with categories
@@ -51,7 +52,9 @@ The application follows a modern full-stack architecture with clear separation o
 - **Dashboard**: Overview with quick actions and daily statistics
 - **POS Interface**: Touch-optimized point of sale with product grid and cart
 - **Product Management**: Administrative interface for catalog management
-- **Color Palette**: Professional FLOUZ theme (#2F80ED primary, #56CCF2 secondary, #27AE60 accent)
+- **Master Analytics**: Advanced analytics dashboard with KPIs, transaction trends, and user insights
+- **User Management**: Complete CRUD interface for managing user accounts, status, and permissions
+- **Color Palette**: Professional FLOUZ theme (#2F80ED primary, #56CCF2 secondary, #27AE60 accent, #E74C3C for master functions)
 - **Typography**: Inter font family with consistent weight hierarchy
 - **Components**: Comprehensive UI component library based on Radix UI
 - **Responsive**: Touch-optimized interface for retail environments
@@ -121,6 +124,7 @@ The application follows a modern full-stack architecture with clear separation o
 
 Changelog:
 - June 26, 2025. Initial setup
+- June 28, 2025. Implémentation du système de compte master avec analytics et gestion utilisateurs
 
 ## User Preferences
 
