@@ -21,7 +21,121 @@ async function requireAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
+async function requireMaster(req: Request, res: Response, next: Function) {
+  if (!(req as any).user?.isMaster) {
+    return res.status(403).json({ message: "Accès réservé au compte master" });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Master user management routes
+  app.get("/api/master/users", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Don't return passwords
+      const safeUsers = users.map(({ password, ...user }) => user);
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.post("/api/master/users", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.put("/api/master/users/:id", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(id, userData);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.put("/api/master/users/:id/toggle", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.toggleUserStatus(id);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.get("/api/master/analytics", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const transactions = await storage.getTransactions();
+      const products = await storage.getProducts();
+      const categories = await storage.getCategories();
+
+      // Statistiques générales
+      const totalUsers = users.length;
+      const activeUsers = users.filter(u => u.isActive).length;
+      const totalTransactions = transactions.length;
+      const totalRevenue = transactions.reduce((sum, t) => sum + parseFloat(t.total), 0);
+
+      // Transactions par jour (7 derniers jours)
+      const today = new Date();
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        return date.toISOString().split('T')[0];
+      }).reverse();
+
+      const transactionsByDay = last7Days.map(date => {
+        const dayTransactions = transactions.filter(t => 
+          t.createdAt && t.createdAt.toISOString().split('T')[0] === date
+        );
+        return {
+          date,
+          count: dayTransactions.length,
+          revenue: dayTransactions.reduce((sum, t) => sum + parseFloat(t.total), 0)
+        };
+      });
+
+      res.json({
+        summary: {
+          totalUsers,
+          activeUsers,
+          totalTransactions,
+          totalRevenue,
+          totalProducts: products.length,
+          totalCategories: categories.length
+        },
+        transactionsByDay,
+        recentUsers: users.slice(-5).map(({ password, ...user }) => user)
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {

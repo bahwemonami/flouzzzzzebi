@@ -6,6 +6,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  toggleUserStatus(id: number): Promise<User | undefined>;
   
   // Session operations
   createSession(userId: number): Promise<Session>;
@@ -75,9 +78,25 @@ export class MemStorage implements IStorage {
       firstName: "Demo",
       lastName: "User",
       isDemo: true,
+      isMaster: false,
+      isActive: true,
       createdAt: new Date(),
     };
     this.users.set(demoUser.id, demoUser);
+
+    // Créer le compte master
+    const masterUser: User = {
+      id: this.currentUserId++,
+      email: "flouz@mail.com",
+      password: "rootsesmort",
+      firstName: "Admin",
+      lastName: "Master",
+      isDemo: false,
+      isMaster: true,
+      isActive: true,
+      createdAt: new Date(),
+    };
+    this.users.set(masterUser.id, masterUser);
   }
 
   private async createDemoData() {
@@ -142,10 +161,40 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName ?? null,
       lastName: insertUser.lastName ?? null,
       isDemo: insertUser.isDemo ?? false,
+      isMaster: insertUser.isMaster ?? false,
+      isActive: insertUser.isActive ?? true,
       createdAt: new Date(),
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updated: User = {
+      ...user,
+      ...userData,
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async toggleUserStatus(id: number): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updated: User = {
+      ...user,
+      isActive: !user.isActive,
+    };
+    this.users.set(id, updated);
+    return updated;
   }
 
   async createSession(userId: number): Promise<Session> {

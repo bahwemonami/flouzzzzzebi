@@ -9,6 +9,8 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   isDemo: boolean("is_demo").default(false),
+  isMaster: boolean("is_master").default(false),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
