@@ -173,6 +173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
           isDemo: user.isDemo,
+          isMaster: user.isMaster,
+          isActive: user.isActive,
         },
         token: session.token,
       });
@@ -200,6 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
           isDemo: user.isDemo,
+          isMaster: user.isMaster,
+          isActive: user.isActive,
         },
         token: session.token,
       });
@@ -228,6 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: user.firstName,
           lastName: user.lastName,
           isDemo: user.isDemo,
+          isMaster: user.isMaster,
+          isActive: user.isActive,
         },
         token: session.token,
       });
