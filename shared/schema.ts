@@ -2,12 +2,11 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
+// Table des comptes (pour l'authentification)
+export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
   isDemo: boolean("is_demo").default(false),
   isMaster: boolean("is_master").default(false),
   isActive: boolean("is_active").default(true),
@@ -16,9 +15,20 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Table des employés (liés à un compte)
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const sessions = pgTable("sessions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
+  selectedUserId: integer("selected_user_id").references(() => users.id),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -45,6 +55,7 @@ export const products = pgTable("products", {
 
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accounts.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   paymentMethod: text("payment_method").notNull(),
@@ -58,6 +69,11 @@ export const transactionItems = pgTable("transaction_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+});
+
+export const insertAccountSchema = createInsertSchema(accounts).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -99,6 +115,12 @@ export const checkoutSchema = z.object({
   paymentMethod: z.enum(["cash", "card", "check"]),
 });
 
+export const selectUserSchema = z.object({
+  userId: z.number(),
+});
+
+export type InsertAccount = z.infer<typeof insertAccountSchema>;
+export type Account = typeof accounts.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
