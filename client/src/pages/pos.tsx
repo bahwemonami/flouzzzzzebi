@@ -545,6 +545,37 @@ export default function POS() {
           </div>
         </div>
       </div>
+
+      {/* Modal de clôture de caisse */}
+      <Dialog open={closeRegisterDialogOpen} onOpenChange={setCloseRegisterDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clôturer la caisse</DialogTitle>
+            <DialogDescription>
+              Vous êtes sur le point de clôturer votre caisse. Un rapport sera envoyé via Telegram et vous serez automatiquement déconnecté.
+              
+              Cette action marque la fin de votre journée de travail.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setCloseRegisterDialogOpen(false)}
+              disabled={closeRegisterMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => closeRegisterMutation.mutate()}
+              disabled={closeRegisterMutation.isPending}
+              style={{ backgroundColor: '#E74C3C' }}
+            >
+              {closeRegisterMutation.isPending ? "Clôture en cours..." : "OK, clôturer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

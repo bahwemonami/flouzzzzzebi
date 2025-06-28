@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { loginSchema, insertUserSchema, insertCategorySchema, insertProductSchema, checkoutSchema } from "@shared/schema";
+import { getDailySummary, formatDailySummaryMessage, sendTelegramMessage } from "./telegram";
 import { z } from "zod";
 
 // Middleware to check authentication
@@ -468,6 +469,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Checkout error:", error);
       res.status(500).json({ message: "Erreur lors de la transaction" });
+    }
+  });
+
+  // Endpoint pour clôturer la caisse
+  app.post("/api/close-register", requireAuth, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Vérifier que l'utilisateur a les informations Telegram
+      if (!user.telegramChatId || !user.telegramBotToken) {
+        return res.status(400).json({ 
+          message: "Configuration Telegram manquante. Contactez votre administrateur." 
+        });
+      }
+
+      // Générer le rapport journalier
+      const dailySummary = await getDailySummary(user.id);
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+      const message = formatDailySummaryMessage(dailySummary, userName);
+
+      // Envoyer la notification Telegram
+      const success = await sendTelegramMessage(user.telegramChatId, user.telegramBotToken, message);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Erreur lors de l'envoi de la notification Telegram" 
+        });
+      }
+
+      // Supprimer la session de l'utilisateur pour le déconnecter
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (token) {
+        await storage.deleteSession(token);
+      }
+
+      res.json({ 
+        message: "Caisse clôturée avec succès", 
+        summary: dailySummary 
+      });
+    } catch (error) {
+      console.error("Erreur lors de la clôture de caisse:", error);
+      res.status(500).json({ message: "Erreur lors de la clôture de caisse" });
     }
   });
 
