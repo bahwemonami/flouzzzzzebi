@@ -381,7 +381,7 @@ export class MemStorage implements IStorage {
     const category: Category = {
       id: this.currentCategoryId++,
       name: categoryData.name,
-      color: categoryData.color,
+      color: categoryData.color ?? "#3B82F6",
       createdAt: new Date(),
     };
     this.categories.set(category.id, category);

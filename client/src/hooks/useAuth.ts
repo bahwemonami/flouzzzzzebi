@@ -1,26 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { LoginData } from "@shared/schema";
+import type { LoginData, Account, User } from "@shared/schema";
 
-interface User {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  isDemo: boolean;
-  isMaster: boolean;
-  isActive: boolean;
+interface AuthData {
+  account: {
+    id: number;
+    email: string;
+    isDemo: boolean;
+    isMaster: boolean;
+  };
+  users: User[];
+  selectedUserId: number | null;
 }
 
-interface AuthResponse {
-  user: User;
+interface LoginResponse {
   token: string;
+  account: {
+    id: number;
+    email: string;
+    isDemo: boolean;
+    isMaster: boolean;
+  };
 }
 
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: authData, isLoading } = useQuery<AuthData>({
     queryKey: ["/api/auth/me"],
     retry: false,
     staleTime: 30000, // 30 secondes
@@ -30,35 +36,25 @@ export function useAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (data: LoginData): Promise<AuthResponse> => {
+    mutationFn: async (data: LoginData): Promise<LoginResponse> => {
       const res = await apiRequest("POST", "/api/auth/login", data);
       return res.json();
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
-      queryClient.setQueryData(["/api/auth/me"], data.user);
+      // Refresh auth data after login
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
 
-  const demoLoginMutation = useMutation({
-    mutationFn: async (): Promise<AuthResponse> => {
-      const res = await apiRequest("POST", "/api/auth/demo");
+  const selectUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("POST", "/api/auth/select-user", { userId });
       return res.json();
     },
-    onSuccess: (data) => {
-      localStorage.setItem("auth_token", data.token);
-      queryClient.setQueryData(["/api/auth/me"], data.user);
-    },
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (data: any): Promise<AuthResponse> => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      localStorage.setItem("auth_token", data.token);
-      queryClient.setQueryData(["/api/auth/me"], data.user);
+    onSuccess: () => {
+      // Refresh auth data after user selection
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
 
@@ -76,13 +72,24 @@ export function useAuth() {
     },
   });
 
+  // Helper function to get selected user
+  const getSelectedUser = () => {
+    if (!authData || !authData.selectedUserId || !authData.users) return null;
+    return authData.users.find((u: User) => u.id === authData.selectedUserId) || null;
+  };
+
   return {
-    user,
+    authData,
+    account: authData?.account,
+    users: authData?.users || [],
+    selectedUser: getSelectedUser(),
+    hasSelectedUser: !!(authData?.selectedUserId),
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!authData,
+    isMaster: !!(authData?.account?.isMaster),
+    isDemo: !!(authData?.account?.isDemo),
     login: loginMutation,
-    demoLogin: demoLoginMutation,
-    register: registerMutation,
+    selectUser: selectUserMutation,
     logout: logoutMutation,
   };
 }
