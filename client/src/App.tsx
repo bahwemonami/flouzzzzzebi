@@ -47,14 +47,13 @@ function Router() {
           <Route path="/user-management" component={UserManagement} />
         </>
       ) : (
-        // Interface utilisateur normal - caisse et gestion
+        // Interface utilisateur normal - uniquement caisse
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/pos" component={POS} />
           <Route path="/products" component={Products} />
           <Route path="/categories" component={Categories} />
           <Route path="/transactions" component={Transactions} />
-          <Route path="/employees" component={Employees} />
         </>
       )}
       <Route component={NotFound} />

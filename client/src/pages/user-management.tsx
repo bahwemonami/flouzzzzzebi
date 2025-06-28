@@ -293,6 +293,7 @@ export default function UserManagement() {
                 style={{ backgroundColor: '#27AE60', borderColor: '#27AE60' }}
                 onClick={() => {
                   setEditingAccount(null);
+                  setEmployees([]);
                   form.reset();
                 }}
               >
@@ -433,6 +434,95 @@ export default function UserManagement() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Section de gestion des employés - seulement pour les nouveaux comptes */}
+                  {!editingAccount && (
+                    <div className="space-y-4 border-t pt-4" style={{ borderColor: '#E0E0E0' }}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold" style={{ color: '#333333' }}>
+                          Employés de l'entreprise
+                        </h3>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addEmployee}
+                          className="btn-touch"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Ajouter
+                        </Button>
+                      </div>
+                      
+                      {employees.length === 0 ? (
+                        <div className="text-center py-6 border-2 border-dashed rounded-lg" style={{ borderColor: '#E0E0E0' }}>
+                          <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#999999' }} />
+                          <p className="text-sm" style={{ color: '#666666' }}>
+                            Aucun employé ajouté. Cliquez sur "Ajouter" pour commencer.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                          {employees.map((employee, index) => (
+                            <div 
+                              key={index} 
+                              className="p-3 border rounded-lg"
+                              style={{ borderColor: '#E0E0E0' }}
+                            >
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-xs font-medium" style={{ color: '#666666' }}>
+                                    Prénom
+                                  </label>
+                                  <Input
+                                    placeholder="Prénom"
+                                    value={employee.firstName}
+                                    onChange={(e) => updateEmployee(index, { ...employee, firstName: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs font-medium" style={{ color: '#666666' }}>
+                                    Nom
+                                  </label>
+                                  <Input
+                                    placeholder="Nom"
+                                    value={employee.lastName}
+                                    onChange={(e) => updateEmployee(index, { ...employee, lastName: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-3">
+                                <div className="flex items-center space-x-2">
+                                  <Switch
+                                    checked={employee.isActive}
+                                    onCheckedChange={(checked) => updateEmployee(index, { ...employee, isActive: checked })}
+                                  />
+                                  <span className="text-xs" style={{ color: '#666666' }}>
+                                    Actif
+                                  </span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeEmployee(index)}
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <p className="text-xs" style={{ color: '#999999' }}>
+                        💡 Les employés pourront être sélectionnés lors de la connexion au compte
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex gap-2 pt-4">
                     <Button 
