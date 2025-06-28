@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,30 +15,15 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { 
-  Building2, 
+  Users, 
   UserPlus, 
   Edit, 
   UserCheck, 
   UserX, 
   Search,
-  Mail,
   Calendar,
-  Shield,
-  Trash2,
-  MessageCircle,
-  Users
+  Trash2
 } from "lucide-react";
-
-interface Account {
-  id: number;
-  email: string;
-  isDemo: boolean;
-  isMaster: boolean;
-  isActive: boolean;
-  telegramChatId: string | null;
-  telegramBotToken: string | null;
-  createdAt: Date;
-}
 
 interface User {
   id: number;
@@ -48,57 +34,60 @@ interface User {
   createdAt: Date;
 }
 
-const accountFormSchema = z.object({
-  email: z.string().email("Email invalide"),
-  password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
-  isDemo: z.boolean().default(false),
-  isMaster: z.boolean().default(false),
+interface Account {
+  id: number;
+  email: string;
+  isDemo: boolean;
+  isMaster: boolean;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+const userFormSchema = z.object({
+  accountId: z.number().min(1, "Veuillez sélectionner un compte"),
+  firstName: z.string().min(1, "Le prénom est requis"),
+  lastName: z.string().min(1, "Le nom est requis"),
   isActive: z.boolean().default(true),
-  telegramChatId: z.string().optional(),
-  telegramBotToken: z.string().optional(),
 });
 
-type AccountFormData = z.infer<typeof accountFormSchema>;
+type UserFormData = z.infer<typeof userFormSchema>;
 
 export default function UserManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  const { data: accounts = [], isLoading } = useQuery<Account[]>({
-    queryKey: ["/api/master/accounts"],
-  });
-
-  const { data: allUsers = [] } = useQuery<User[]>({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/master/users"],
   });
 
-  const form = useForm<AccountFormData>({
-    resolver: zodResolver(accountFormSchema),
+  const { data: accounts = [] } = useQuery<Account[]>({
+    queryKey: ["/api/master/accounts"],
+  });
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userFormSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      isDemo: false,
-      isMaster: false,
+      accountId: 0,
+      firstName: "",
+      lastName: "",
       isActive: true,
-      telegramChatId: "",
-      telegramBotToken: "",
     },
   });
 
-  const createAccountMutation = useMutation({
-    mutationFn: async (data: AccountFormData) => {
-      const res = await apiRequest("POST", "/api/master/accounts", data);
+  const createUserMutation = useMutation({
+    mutationFn: async (data: UserFormData) => {
+      const res = await apiRequest("POST", "/api/master/users", data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/master/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
       setDialogOpen(false);
       form.reset();
       toast({
-        title: "Entreprise créée",
-        description: "L'entreprise a été créée avec succès",
+        title: "Employé créé",
+        description: "L'employé a été créé avec succès",
       });
     },
     onError: (error) => {
@@ -110,19 +99,19 @@ export default function UserManagement() {
     },
   });
 
-  const updateAccountMutation = useMutation({
-    mutationFn: async (data: { id: number; accountData: Partial<AccountFormData> }) => {
-      const res = await apiRequest("PUT", `/api/master/accounts/${data.id}`, data.accountData);
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: { id: number; userData: Partial<UserFormData> }) => {
+      const res = await apiRequest("PUT", `/api/master/users/${data.id}`, data.userData);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/master/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
       setDialogOpen(false);
-      setEditingAccount(null);
+      setEditingUser(null);
       form.reset();
       toast({
-        title: "Entreprise modifiée",
-        description: "L'entreprise a été modifiée avec succès",
+        title: "Employé modifié",
+        description: "L'employé a été modifié avec succès",
       });
     },
     onError: (error) => {
@@ -134,16 +123,16 @@ export default function UserManagement() {
     },
   });
 
-  const toggleAccountMutation = useMutation({
+  const toggleUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("POST", `/api/master/accounts/${id}/toggle`, {});
+      const res = await apiRequest("POST", `/api/master/users/${id}/toggle`, {});
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/master/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
       toast({
         title: "Statut modifié",
-        description: "Le statut de l'entreprise a été modifié",
+        description: "Le statut de l'employé a été modifié",
       });
     },
     onError: (error) => {
@@ -155,16 +144,16 @@ export default function UserManagement() {
     },
   });
 
-  const deleteAccountMutation = useMutation({
+  const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/master/accounts/${id}`, {});
+      const res = await apiRequest("DELETE", `/api/master/users/${id}`, {});
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/master/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
       toast({
-        title: "Entreprise supprimée",
-        description: "L'entreprise a été supprimée avec succès",
+        title: "Employé supprimé",
+        description: "L'employé a été supprimé avec succès",
       });
     },
     onError: (error) => {
@@ -176,45 +165,45 @@ export default function UserManagement() {
     },
   });
 
-  const onSubmit = (data: AccountFormData) => {
-    if (editingAccount) {
-      updateAccountMutation.mutate({ id: editingAccount.id, accountData: data });
+  const onSubmit = (data: UserFormData) => {
+    if (editingUser) {
+      updateUserMutation.mutate({ id: editingUser.id, userData: data });
     } else {
-      createAccountMutation.mutate(data);
+      createUserMutation.mutate(data);
     }
   };
 
-  const openEditDialog = (account: Account) => {
-    setEditingAccount(account);
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
     form.reset({
-      email: account.email,
-      password: "", // Ne pas pré-remplir le mot de passe
-      isDemo: account.isDemo,
-      isMaster: account.isMaster,
-      isActive: account.isActive,
-      telegramChatId: account.telegramChatId || "",
-      telegramBotToken: account.telegramBotToken || "",
+      accountId: user.accountId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
     });
     setDialogOpen(true);
   };
 
   const closeDialog = () => {
     setDialogOpen(false);
-    setEditingAccount(null);
+    setEditingUser(null);
     form.reset();
   };
 
-  const getEmployeeCount = (accountId: number) => {
-    return allUsers.filter(user => user.accountId === accountId).length;
+  const getAccountEmail = (accountId: number) => {
+    const account = accounts.find(a => a.id === accountId);
+    return account?.email || 'Compte introuvable';
   };
 
-  const filteredAccounts = accounts.filter(account =>
-    account.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(user =>
+    user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getAccountEmail(user.accountId).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
     return (
-      <Layout title="Gestion des Entreprises">
+      <Layout title="Gestion des Employés">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -233,22 +222,20 @@ export default function UserManagement() {
     );
   }
 
-  const activeAccounts = accounts.filter(a => a.isActive).length;
-  const inactiveAccounts = accounts.length - activeAccounts;
-  const demoAccounts = accounts.filter(a => a.isDemo).length;
-  const masterAccounts = accounts.filter(a => a.isMaster).length;
+  const activeUsers = users.filter(u => u.isActive).length;
+  const inactiveUsers = users.length - activeUsers;
 
   return (
-    <Layout title="Gestion des Entreprises">
+    <Layout title="Gestion des Employés">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-3xl font-bold" style={{ color: '#2F80ED' }}>
-              Gestion des Entreprises
+              Gestion des Employés
             </h2>
             <p className="text-sm mt-1" style={{ color: '#666666' }}>
-              Créer, modifier et gérer les comptes entreprises de la plateforme
+              Créer, modifier et gérer les employés des comptes de la plateforme
             </p>
           </div>
           
@@ -258,18 +245,18 @@ export default function UserManagement() {
                 className="btn-touch font-semibold"
                 style={{ backgroundColor: '#27AE60', borderColor: '#27AE60' }}
                 onClick={() => {
-                  setEditingAccount(null);
+                  setEditingUser(null);
                   form.reset();
                 }}
               >
                 <UserPlus className="mr-2 w-4 h-4" />
-                Nouvelle Entreprise
+                Nouvel Employé
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  {editingAccount ? 'Modifier l\'entreprise' : 'Nouvelle entreprise'}
+                  {editingUser ? 'Modifier l\'employé' : 'Nouvel employé'}
                 </DialogTitle>
               </DialogHeader>
               
@@ -277,12 +264,40 @@ export default function UserManagement() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="accountId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Compte</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          value={field.value.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner un compte" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {accounts.map((account) => (
+                              <SelectItem key={account.id} value={account.id.toString()}>
+                                {account.email} {account.isDemo && '(DEMO)'} {account.isMaster && '(MASTER)'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prénom</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="email@entreprise.com" {...field} />
+                          <Input placeholder="Prénom de l'employé" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -291,90 +306,14 @@ export default function UserManagement() {
 
                   <FormField
                     control={form.control}
-                    name="password"
+                    name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          {editingAccount ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe'}
-                        </FormLabel>
+                        <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder={editingAccount ? 'Laisser vide pour conserver' : 'Mot de passe'} 
-                            {...field} 
-                          />
+                          <Input placeholder="Nom de l'employé" {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="telegramChatId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telegram Chat ID (optionnel)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ID du chat Telegram" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="telegramBotToken"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telegram Bot Token (optionnel)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Token du bot Telegram" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="isDemo"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Mode Démo</FormLabel>
-                          <div className="text-sm text-gray-600">
-                            Compte de démonstration avec données pré-remplies
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="isMaster"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel>Compte Master</FormLabel>
-                          <div className="text-sm text-gray-600">
-                            Accès aux fonctions d'administration de la plateforme
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
                       </FormItem>
                     )}
                   />
@@ -385,9 +324,9 @@ export default function UserManagement() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel>Compte actif</FormLabel>
+                          <FormLabel>Statut actif</FormLabel>
                           <div className="text-sm text-gray-600">
-                            L'entreprise peut se connecter et utiliser l'application
+                            L'employé peut se connecter et utiliser l'application
                           </div>
                         </div>
                         <FormControl>
@@ -413,9 +352,9 @@ export default function UserManagement() {
                       type="submit" 
                       className="flex-1"
                       style={{ backgroundColor: '#27AE60', borderColor: '#27AE60' }}
-                      disabled={createAccountMutation.isPending || updateAccountMutation.isPending}
+                      disabled={createUserMutation.isPending || updateUserMutation.isPending}
                     >
-                      {editingAccount ? 'Modifier' : 'Créer'}
+                      {editingUser ? 'Modifier' : 'Créer'}
                     </Button>
                   </div>
                 </form>
@@ -430,17 +369,17 @@ export default function UserManagement() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
-                  Total Entreprises
+                  Total Employés
                 </CardTitle>
-                <Building2 className="w-4 h-4" style={{ color: '#2F80ED' }} />
+                <Users className="w-4 h-4" style={{ color: '#2F80ED' }} />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold" style={{ color: '#333333' }}>
-                {accounts.length}
+                {users.length}
               </div>
               <p className="text-xs mt-1" style={{ color: '#666666' }}>
-                Entreprises enregistrées
+                Employés enregistrés
               </p>
             </CardContent>
           </Card>
@@ -449,17 +388,17 @@ export default function UserManagement() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
-                  Entreprises Actives
+                  Employés Actifs
                 </CardTitle>
                 <UserCheck className="w-4 h-4" style={{ color: '#27AE60' }} />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold" style={{ color: '#27AE60' }}>
-                {activeAccounts}
+                {activeUsers}
               </div>
               <p className="text-xs mt-1" style={{ color: '#666666' }}>
-                Entreprises actives
+                Employés actifs
               </p>
             </CardContent>
           </Card>
@@ -468,36 +407,36 @@ export default function UserManagement() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
-                  Comptes Démo
+                  Employés Inactifs
                 </CardTitle>
-                <UserX className="w-4 h-4" style={{ color: '#56CCF2' }} />
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold" style={{ color: '#56CCF2' }}>
-                {demoAccounts}
-              </div>
-              <p className="text-xs mt-1" style={{ color: '#666666' }}>
-                Comptes de démonstration
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
-                  Comptes Master
-                </CardTitle>
-                <Shield className="w-4 h-4" style={{ color: '#E74C3C' }} />
+                <UserX className="w-4 h-4" style={{ color: '#E74C3C' }} />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold" style={{ color: '#E74C3C' }}>
-                {masterAccounts}
+                {inactiveUsers}
               </div>
               <p className="text-xs mt-1" style={{ color: '#666666' }}>
-                Comptes administrateurs
+                Employés inactifs
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium" style={{ color: '#666666' }}>
+                  Comptes Liés
+                </CardTitle>
+                <Calendar className="w-4 h-4" style={{ color: '#56CCF2' }} />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold" style={{ color: '#56CCF2' }}>
+                {accounts.length}
+              </div>
+              <p className="text-xs mt-1" style={{ color: '#666666' }}>
+                Comptes disponibles
               </p>
             </CardContent>
           </Card>
@@ -509,7 +448,7 @@ export default function UserManagement() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: '#666666' }} />
               <Input
-                placeholder="Rechercher une entreprise..."
+                placeholder="Rechercher un employé..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -518,75 +457,56 @@ export default function UserManagement() {
           </CardContent>
         </Card>
 
-        {/* Accounts List */}
+        {/* Users List */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" style={{ color: '#2F80ED' }} />
-              Liste des Entreprises ({filteredAccounts.length})
+              <Users className="w-5 h-5" style={{ color: '#2F80ED' }} />
+              Liste des Employés ({filteredUsers.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredAccounts.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
-                <Building2 className="w-12 h-12 mx-auto mb-4" style={{ color: '#E0E0E0' }} />
+                <Users className="w-12 h-12 mx-auto mb-4" style={{ color: '#E0E0E0' }} />
                 <p className="text-lg font-medium" style={{ color: '#666666' }}>
-                  Aucune entreprise trouvée
+                  Aucun employé trouvé
                 </p>
                 <p className="text-sm mt-1" style={{ color: '#999999' }}>
-                  {searchTerm ? 'Essayez une autre recherche' : 'Commencez par créer une entreprise'}
+                  {searchTerm ? 'Essayez une autre recherche' : 'Commencez par créer un employé'}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredAccounts.map((account) => (
+                {filteredUsers.map((user) => (
                   <div 
-                    key={account.id} 
+                    key={user.id} 
                     className="flex items-center justify-between p-4 rounded-lg border" 
                     style={{ borderColor: '#E0E0E0' }}
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F80ED] to-[#56CCF2] flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-white" />
+                        <span className="text-white text-sm font-semibold">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium" style={{ color: '#333333' }}>
-                            {account.email}
+                            {user.firstName} {user.lastName}
                           </p>
-                          <div className="flex gap-1">
-                            {account.isMaster && (
-                              <Badge variant="destructive" className="text-xs">
-                                Master
-                              </Badge>
-                            )}
-                            {account.isDemo && (
-                              <Badge variant="secondary" className="text-xs">
-                                Démo
-                              </Badge>
-                            )}
-                            <Badge 
-                              variant={account.isActive ? "default" : "destructive"}
-                              className="text-xs"
-                            >
-                              {account.isActive ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </div>
+                          <Badge 
+                            variant={user.isActive ? "default" : "destructive"}
+                            className="text-xs"
+                          >
+                            {user.isActive ? 'Actif' : 'Inactif'}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-4 mt-1">
-                          <p className="text-sm" style={{ color: '#666666' }}>
-                            <Users className="w-3 h-3 inline mr-1" />
-                            {getEmployeeCount(account.id)} employé(s)
-                          </p>
-                          {account.telegramChatId && (
-                            <p className="text-sm" style={{ color: '#666666' }}>
-                              <MessageCircle className="w-3 h-3 inline mr-1" />
-                              Telegram configuré
-                            </p>
-                          )}
-                        </div>
+                        <p className="text-sm" style={{ color: '#666666' }}>
+                          Compte: {getAccountEmail(user.accountId)}
+                        </p>
                         <p className="text-xs" style={{ color: '#999999' }}>
-                          Créé le {new Date(account.createdAt).toLocaleDateString('fr-FR')}
+                          Créé le {new Date(user.createdAt).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                     </div>
@@ -595,7 +515,7 @@ export default function UserManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openEditDialog(account)}
+                        onClick={() => openEditDialog(user)}
                         className="btn-touch"
                       >
                         <Edit className="w-4 h-4" />
@@ -604,23 +524,22 @@ export default function UserManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => toggleAccountMutation.mutate(account.id)}
+                        onClick={() => toggleUserMutation.mutate(user.id)}
                         className="btn-touch"
                         style={{ 
-                          borderColor: account.isActive ? '#E74C3C' : '#27AE60',
-                          color: account.isActive ? '#E74C3C' : '#27AE60'
+                          borderColor: user.isActive ? '#E74C3C' : '#27AE60',
+                          color: user.isActive ? '#E74C3C' : '#27AE60'
                         }}
                       >
-                        {account.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                       </Button>
                       
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteAccountMutation.mutate(account.id)}
+                        onClick={() => deleteUserMutation.mutate(user.id)}
                         className="btn-touch"
                         style={{ borderColor: '#E74C3C', color: '#E74C3C' }}
-                        disabled={account.isMaster}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

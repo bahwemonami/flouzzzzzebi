@@ -32,6 +32,7 @@ const navigation = [
   { name: "Produits", href: "/products", icon: Package },
   { name: "Catégories", href: "/categories", icon: Tags },
   { name: "Transactions", href: "/transactions", icon: Receipt },
+  { name: "Employés", href: "/employees", icon: Users },
 ];
 
 const masterNavigation = [

@@ -14,6 +14,7 @@ import Categories from "@/pages/categories";
 import Transactions from "@/pages/transactions";
 import Analytics from "@/pages/analytics";
 import UserManagement from "@/pages/user-management";
+import Employees from "@/pages/employees";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -46,13 +47,14 @@ function Router() {
           <Route path="/user-management" component={UserManagement} />
         </>
       ) : (
-        // Interface utilisateur normal - uniquement caisse
+        // Interface utilisateur normal - caisse et gestion
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/pos" component={POS} />
           <Route path="/products" component={Products} />
           <Route path="/categories" component={Categories} />
           <Route path="/transactions" component={Transactions} />
+          <Route path="/employees" component={Employees} />
         </>
       )}
       <Route component={NotFound} />
