@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   isDemo: boolean("is_demo").default(false),
   isMaster: boolean("is_master").default(false),
   isActive: boolean("is_active").default(true),
+  telegramChatId: text("telegram_chat_id"),
+  telegramBotToken: text("telegram_bot_token"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

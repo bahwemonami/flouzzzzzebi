@@ -34,6 +34,8 @@ interface User {
   isDemo: boolean;
   isMaster: boolean;
   isActive: boolean;
+  telegramChatId: string | null;
+  telegramBotToken: string | null;
   createdAt: Date;
 }
 
@@ -45,6 +47,8 @@ const userFormSchema = z.object({
   isDemo: z.boolean().default(false),
   isMaster: z.boolean().default(false),
   isActive: z.boolean().default(true),
+  telegramChatId: z.string().optional(),
+  telegramBotToken: z.string().optional(),
 });
 
 type UserFormData = z.infer<typeof userFormSchema>;
@@ -368,6 +372,37 @@ export default function UserManagement() {
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Configuration Telegram</h3>
+                    <FormField
+                      control={form.control}
+                      name="telegramChatId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chat ID Telegram</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="ex: -1001234567890" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="telegramBotToken"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Token Bot Telegram</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="ex: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz" />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />

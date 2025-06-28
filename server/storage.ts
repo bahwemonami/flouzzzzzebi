@@ -81,6 +81,8 @@ export class MemStorage implements IStorage {
       isDemo: true,
       isMaster: false,
       isActive: true,
+      telegramChatId: null,
+      telegramBotToken: null,
       createdAt: new Date(),
     };
     this.users.set(demoUser.id, demoUser);
@@ -95,6 +97,8 @@ export class MemStorage implements IStorage {
       isDemo: false,
       isMaster: true,
       isActive: true,
+      telegramChatId: null,
+      telegramBotToken: null,
       createdAt: new Date(),
     };
     this.users.set(masterUser.id, masterUser);
@@ -164,6 +168,8 @@ export class MemStorage implements IStorage {
       isDemo: insertUser.isDemo ?? false,
       isMaster: insertUser.isMaster ?? false,
       isActive: insertUser.isActive ?? true,
+      telegramChatId: insertUser.telegramChatId ?? null,
+      telegramBotToken: insertUser.telegramBotToken ?? null,
       createdAt: new Date(),
     };
     this.users.set(id, user);
