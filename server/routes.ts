@@ -587,6 +587,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route pour clôturer la caisse
+  app.post("/api/close-register", requireAuth, async (req, res) => {
+    try {
+      const account = (req as any).account;
+      const selectedUser = (req as any).selectedUser;
+      
+      // Vérifier que l'account a les informations Telegram
+      if (!account.telegramChatId || !account.telegramBotToken) {
+        return res.status(400).json({ 
+          message: "Configuration Telegram manquante. Contactez votre administrateur." 
+        });
+      }
+
+      // Générer le rapport journalier avec l'ID de l'utilisateur sélectionné
+      const { getDailySummary, formatDailySummaryMessage, sendTelegramMessage } = await import("./telegram");
+      const dailySummary = await getDailySummary(selectedUser.id);
+      const userName = `${selectedUser.firstName} ${selectedUser.lastName}`;
+      const message = formatDailySummaryMessage(dailySummary, userName);
+
+      // Envoyer la notification Telegram
+      const success = await sendTelegramMessage(account.telegramChatId, account.telegramBotToken, message);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          message: "Erreur lors de l'envoi de la notification Telegram" 
+        });
+      }
+
+      // Supprimer la session pour déconnecter l'utilisateur
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (token) {
+        await storage.deleteSession(token);
+      }
+
+      res.json({ 
+        message: "Caisse clôturée avec succès", 
+        summary: dailySummary 
+      });
+    } catch (error) {
+      console.error("Erreur lors de la clôture de caisse:", error);
+      res.status(500).json({ message: "Erreur lors de la clôture de caisse" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

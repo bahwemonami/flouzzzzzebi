@@ -27,7 +27,7 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "check">("cash");
   const [amountReceived, setAmountReceived] = useState("");
   const [discount, setDiscount] = useState(0);
-  const [closeRegisterDialogOpen, setCloseRegisterDialogOpen] = useState(false);
+
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -59,32 +59,7 @@ export default function POS() {
     },
   });
 
-  const closeRegisterMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/close-register");
-      return res.json();
-    },
-    onSuccess: () => {
-      setCloseRegisterDialogOpen(false);
-      
-      toast({
-        title: "Caisse clôturée",
-        description: "Un rapport a été envoyé via Telegram. Vous allez être déconnecté.",
-      });
 
-      // Déconnexion après 2 secondes
-      setTimeout(() => {
-        window.location.href = "/api/auth/logout";
-      }, 2000);
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Une erreur est survenue",
-        variant: "destructive",
-      });
-    },
-  });
 
   const filteredProducts = products.filter(product =>
     product.isActive &&
@@ -546,36 +521,7 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Modal de clôture de caisse */}
-      <Dialog open={closeRegisterDialogOpen} onOpenChange={setCloseRegisterDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clôturer la caisse</DialogTitle>
-            <DialogDescription>
-              Vous êtes sur le point de clôturer votre caisse. Un rapport sera envoyé via Telegram et vous serez automatiquement déconnecté.
-              
-              Cette action marque la fin de votre journée de travail.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setCloseRegisterDialogOpen(false)}
-              disabled={closeRegisterMutation.isPending}
-            >
-              Annuler
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => closeRegisterMutation.mutate()}
-              disabled={closeRegisterMutation.isPending}
-              style={{ backgroundColor: '#E74C3C' }}
-            >
-              {closeRegisterMutation.isPending ? "Clôture en cours..." : "OK, clôturer"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </Layout>
   );
 }
