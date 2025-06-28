@@ -87,6 +87,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/master/users/:id", requireAuth, requireMaster, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ message: "Utilisateur non trouvé ou suppression interdite" });
+      }
+      res.json({ message: "Utilisateur supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   app.get("/api/master/analytics", requireAuth, requireMaster, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
@@ -144,6 +157,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(email);
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Identifiants invalides" });
+      }
+
+      // Vérifier si le compte est actif
+      if (!user.isActive) {
+        return res.status(403).json({ message: "Votre compte a été suspendu. Contactez l'administrateur pour plus d'informations." });
       }
 
       const session = await storage.createSession(user.id);

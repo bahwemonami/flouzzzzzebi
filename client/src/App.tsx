@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Welcome from "@/pages/welcome";
 import Dashboard from "@/pages/dashboard";
+import MasterDashboard from "@/pages/master-dashboard";
 import POS from "@/pages/pos";
 import Products from "@/pages/products";
 import Categories from "@/pages/categories";
@@ -15,7 +16,7 @@ import UserManagement from "@/pages/user-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (

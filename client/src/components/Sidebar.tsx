@@ -145,8 +145,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-              {/* Navigation principale */}
-              {navigation.map((item) => {
+              {/* Navigation pour utilisateurs normaux uniquement */}
+              {!(user as any)?.isMaster && navigation.map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
                 
@@ -170,11 +170,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               {/* Navigation master - uniquement pour les comptes master */}
               {(user as any)?.isMaster && (
                 <>
-                  <div className="pt-4 pb-2">
+                  <div className="pb-2">
                     <div className="flex items-center gap-2 px-2">
                       <Shield className="w-4 h-4" style={{ color: '#E74C3C' }} />
                       <span className="text-xs font-semibold" style={{ color: '#E74C3C' }}>
-                        ADMINISTRATION
+                        ADMINISTRATION MASTER
                       </span>
                     </div>
                   </div>

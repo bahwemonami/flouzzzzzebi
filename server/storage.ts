@@ -9,6 +9,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   toggleUserStatus(id: number): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Session operations
   createSession(userId: number): Promise<Session>;
@@ -195,6 +196,23 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    // Ne pas supprimer le compte master
+    const user = this.users.get(id);
+    if (user?.isMaster) return false;
+    
+    // Supprimer toutes les sessions de cet utilisateur
+    const sessionsToDelete: string[] = [];
+    this.sessions.forEach((session, token) => {
+      if (session.userId === id) {
+        sessionsToDelete.push(token);
+      }
+    });
+    sessionsToDelete.forEach(token => this.sessions.delete(token));
+    
+    return this.users.delete(id);
   }
 
   async createSession(userId: number): Promise<Session> {
