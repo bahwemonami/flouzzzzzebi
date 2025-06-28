@@ -129,8 +129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/master/accounts", requireAuth, requireMaster, async (req, res) => {
     try {
-      const accountData = insertAccountSchema.parse(req.body);
-      const account = await storage.createAccount(accountData);
+      const { employees, ...accountData } = req.body;
+      
+      // Créer le compte
+      const accountDataParsed = insertAccountSchema.parse(accountData);
+      const account = await storage.createAccount(accountDataParsed);
+      
+      // Créer les employés si fournis
+      if (employees && Array.isArray(employees)) {
+        for (const employee of employees) {
+          const employeeData = insertUserSchema.parse({
+            ...employee,
+            accountId: account.id
+          });
+          await storage.createUser(employeeData);
+        }
+      }
+      
       const { password, ...safeAccount } = account;
       res.json(safeAccount);
     } catch (error) {

@@ -48,6 +48,12 @@ interface User {
   createdAt: Date;
 }
 
+const employeeSchema = z.object({
+  firstName: z.string().min(1, "Le prénom est requis"),
+  lastName: z.string().min(1, "Le nom est requis"),
+  isActive: z.boolean().default(true),
+});
+
 const accountFormSchema = z.object({
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
@@ -56,14 +62,19 @@ const accountFormSchema = z.object({
   isActive: z.boolean().default(true),
   telegramChatId: z.string().optional(),
   telegramBotToken: z.string().optional(),
+  employees: z.array(employeeSchema).optional().default([]),
 });
 
 type AccountFormData = z.infer<typeof accountFormSchema>;
+
+type EmployeeFormData = z.infer<typeof employeeSchema>;
 
 export default function UserManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [employees, setEmployees] = useState<EmployeeFormData[]>([]);
+  const [editingEmployeeIndex, setEditingEmployeeIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   const { data: accounts = [], isLoading } = useQuery<Account[]>({
@@ -84,21 +95,28 @@ export default function UserManagement() {
       isActive: true,
       telegramChatId: "",
       telegramBotToken: "",
+      employees: [],
     },
   });
 
   const createAccountMutation = useMutation({
     mutationFn: async (data: AccountFormData) => {
-      const res = await apiRequest("POST", "/api/master/accounts", data);
+      const payload = {
+        ...data,
+        employees: employees
+      };
+      const res = await apiRequest("POST", "/api/master/accounts", payload);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/master/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/master/users"] });
       setDialogOpen(false);
       form.reset();
+      setEmployees([]);
       toast({
         title: "Entreprise créée",
-        description: "L'entreprise a été créée avec succès",
+        description: `L'entreprise a été créée avec ${employees.length} employé(s)`,
       });
     },
     onError: (error) => {
@@ -201,7 +219,23 @@ export default function UserManagement() {
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingAccount(null);
+    setEmployees([]);
+    setEditingEmployeeIndex(null);
     form.reset();
+  };
+
+  const addEmployee = () => {
+    setEmployees([...employees, { firstName: "", lastName: "", isActive: true }]);
+  };
+
+  const updateEmployee = (index: number, employee: EmployeeFormData) => {
+    const newEmployees = [...employees];
+    newEmployees[index] = employee;
+    setEmployees(newEmployees);
+  };
+
+  const removeEmployee = (index: number) => {
+    setEmployees(employees.filter((_, i) => i !== index));
   };
 
   const getEmployeeCount = (accountId: number) => {
@@ -266,7 +300,7 @@ export default function UserManagement() {
                 Nouvelle Entreprise
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingAccount ? 'Modifier l\'entreprise' : 'Nouvelle entreprise'}
