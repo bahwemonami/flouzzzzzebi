@@ -339,24 +339,7 @@ export default function MasterDashboard() {
           </Card>
         </div>
 
-        {/* Message d'information */}
-        <Card className="border-[#E74C3C]">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 mt-0.5" style={{ color: "#E74C3C" }} />
-              <div>
-                <h3 className="font-semibold mb-1" style={{ color: "#E74C3C" }}>
-                  Compte Master - Administration
-                </h3>
-                <p className="text-sm" style={{ color: "#666666" }}>
-                  Vous êtes connecté avec un compte master. Ce compte est réservé à l'administration 
-                  des utilisateurs et à la consultation des statistiques de la plateforme. 
-                  Les fonctionnalités de caisse ne sont pas disponibles pour ce type de compte.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </Layout>
   );
