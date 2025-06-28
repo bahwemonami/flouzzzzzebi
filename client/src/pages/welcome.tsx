@@ -9,12 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginData } from "@shared/schema";
-import { ScanBarcode, Mail, Lock, LogIn, Eye, UserPlus } from "lucide-react";
+import { ScanBarcode, Mail, Lock, LogIn, Eye } from "lucide-react";
 
 export default function Welcome() {
   const { toast } = useToast();
   const { login } = useAuth();
-  const [showRegister, setShowRegister] = useState(false);
+
 
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -173,16 +173,6 @@ export default function Welcome() {
               >
                 <Eye className="mr-2 w-4 h-4" style={{ color: '#56CCF2' }} />
                 {login.isPending ? "Chargement..." : "Mode démonstration"}
-              </Button>
-              
-              <Button 
-                type="button"
-                className="w-full btn-touch font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
-                style={{ backgroundColor: '#27AE60' }}
-                onClick={() => setShowRegister(true)}
-              >
-                <UserPlus className="mr-2 w-4 h-4" />
-                Créer un compte
               </Button>
             </div>
           </CardContent>

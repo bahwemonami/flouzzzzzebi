@@ -26,6 +26,7 @@ export interface IStorage {
   getAccountBySessionToken(token: string): Promise<Account | undefined>;
   selectUser(token: string, userId: number): Promise<Session | undefined>;
   deleteSession(token: string): Promise<void>;
+  deleteAccountSessions(accountId: number): Promise<void>;
 
   // Category operations
   getCategories(): Promise<Category[]>;

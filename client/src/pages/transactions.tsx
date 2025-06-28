@@ -140,6 +140,41 @@ export default function Transactions() {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ['ID', 'Date', 'Heure', 'Total (€)', 'Mode de paiement'];
+    
+    const csvData = filteredTransactions.map(transaction => {
+      const date = transaction.createdAt ? new Date(transaction.createdAt) : new Date();
+      const formattedDate = date.toLocaleDateString('fr-FR');
+      const formattedTime = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      
+      const paymentMethodText = transaction.paymentMethod === 'cash' ? 'Espèces' : 
+                               transaction.paymentMethod === 'card' ? 'Carte bancaire' : 'Chèque';
+      
+      return [
+        transaction.id,
+        formattedDate,
+        formattedTime,
+        transaction.total,
+        paymentMethodText
+      ];
+    });
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Layout title="Transactions">
       <div className="p-6">
@@ -158,11 +193,11 @@ export default function Transactions() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
               <Download className="w-4 h-4 mr-2" />
               Exporter
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Actualiser
             </Button>
