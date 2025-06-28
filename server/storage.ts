@@ -373,6 +373,21 @@ export class MemStorage implements IStorage {
     this.sessions.delete(token);
   }
 
+  async deleteAccountSessions(accountId: number): Promise<void> {
+    // Supprimer toutes les sessions pour ce compte
+    const tokensToDelete: string[] = [];
+    
+    Array.from(this.sessions.entries()).forEach(([token, session]) => {
+      if (session.accountId === accountId) {
+        tokensToDelete.push(token);
+      }
+    });
+    
+    tokensToDelete.forEach(token => {
+      this.sessions.delete(token);
+    });
+  }
+
   // Category operations
   async getCategories(): Promise<Category[]> {
     return Array.from(this.categories.values());

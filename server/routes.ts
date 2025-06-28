@@ -57,6 +57,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Compte désactivé" });
       }
 
+      // Supprimer toutes les sessions existantes pour ce compte (session unique)
+      await storage.deleteAccountSessions(account.id);
+
       const session = await storage.createSession(account.id);
       res.json({ 
         token: session.token,
