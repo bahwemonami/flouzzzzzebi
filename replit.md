@@ -89,6 +89,7 @@ The application follows a modern full-stack architecture with clear separation o
    - Vite handles frontend development with hot reloading
    - Express server serves API endpoints
    - Database migrations managed through Drizzle Kit
+   - Package concurrently installed for cross-platform development support
 
 ## External Dependencies
 
@@ -118,6 +119,12 @@ The application follows a modern full-stack architecture with clear separation o
 - **Production**: `npm run build` followed by `npm run start`
 - **Port Configuration**: Application runs on port 5000, exposed as port 80
 
+### Windows Development Setup
+- **Package**: concurrently installed for cross-platform development
+- **Batch Script**: `dev.bat` provides one-click startup on Windows
+- **README**: Comprehensive setup guide with demo credentials
+- **Compatibility**: Full Windows support with identical functionality
+
 ### Build Process
 1. Frontend assets built with Vite to `dist/public`
 2. Backend bundled with esbuild to `dist/index.js`
@@ -134,6 +141,8 @@ Changelog:
 - June 26, 2025. Initial setup
 - June 28, 2025. Implémentation du système de compte master avec analytics et gestion utilisateurs
 - June 28, 2025. Ajout de la fonctionnalité de clôture de caisse avec notifications Telegram
+- June 28, 2025. Export CSV des transactions, suppression bouton "CRÉER UN COMPTE", système de session unique
+- June 28, 2025. Configuration Windows avec concurrently, dev.bat et README complet
 
 ## User Preferences
 
