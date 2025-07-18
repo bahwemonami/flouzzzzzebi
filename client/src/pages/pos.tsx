@@ -39,7 +39,7 @@ export default function POS() {
 
   const checkoutMutation = useMutation({
     mutationFn: async (data: CheckoutData) => {
-      const res = await apiRequest("POST", "/api/checkout", data);
+      const res = await apiRequest("POST", "/api/transactions/checkout", data);
       return res.json();
     },
     onSuccess: () => {

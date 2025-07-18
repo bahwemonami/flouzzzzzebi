@@ -4,11 +4,18 @@ import { storage } from "./storage";
 import { loginSchema, insertAccountSchema, insertUserSchema, insertCategorySchema, insertProductSchema, checkoutSchema, selectUserSchema } from "@shared/schema";
 import { getDailySummary, formatDailySummaryMessage, sendTelegramMessage } from "./telegram";
 import { z } from "zod";
+import dotenv from "dotenv";
+dotenv.config();
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not defined in the environment variables");
+}
 
 // Middleware to check authentication
 async function requireAuth(req: Request, res: Response, next: Function) {
   const token = req.headers.authorization?.replace("Bearer ", "");
-  
+
   if (!token) {
     return res.status(401).json({ message: "Token requis" });
   }
@@ -47,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
-      
+
       const account = await storage.getAccountByEmail(email);
       if (!account || account.password !== password) {
         return res.status(401).json({ message: "Email ou mot de passe incorrect" });
@@ -61,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteAccountSessions(account.id);
 
       const session = await storage.createSession(account.id);
-      res.json({ 
+      res.json({
         token: session.token,
         account: {
           id: account.id,
@@ -79,10 +86,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const account = (req as any).account;
       const session = (req as any).session;
-      
+
       // Get users for this account
       const users = await storage.getUsersByAccount(account.id);
-      
+
       res.json({
         account: {
           id: account.id,
@@ -102,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = selectUserSchema.parse(req.body);
       const session = (req as any).session;
-      
+
       const updatedSession = await storage.selectUser(session.token, userId);
       if (!updatedSession) {
         return res.status(400).json({ message: "Utilisateur invalide" });
@@ -140,11 +147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/master/accounts", requireAuth, requireMaster, async (req, res) => {
     try {
       const { employees, ...accountData } = req.body;
-      
+
       // Créer le compte
       const accountDataParsed = insertAccountSchema.parse(accountData);
       const account = await storage.createAccount(accountDataParsed);
-      
+
       // Créer les employés si fournis
       if (employees && Array.isArray(employees)) {
         for (const employee of employees) {
@@ -155,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createUser(employeeData);
         }
       }
-      
+
       const { password, ...safeAccount } = account;
       res.json(safeAccount);
     } catch (error) {
@@ -168,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const accountData = insertAccountSchema.partial().parse(req.body);
       const account = await storage.updateAccount(id, accountData);
-      
+
       if (!account) {
         return res.status(404).json({ message: "Compte introuvable" });
       }
@@ -184,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const account = await storage.toggleAccountStatus(id);
-      
+
       if (!account) {
         return res.status(404).json({ message: "Compte introuvable" });
       }
@@ -200,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteAccount(id);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Impossible de supprimer ce compte" });
       }
@@ -241,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userData = insertUserSchema.partial().parse(req.body);
       const user = await storage.updateUser(id, userData);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Utilisateur introuvable" });
       }
@@ -256,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.toggleUserStatus(id);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Utilisateur introuvable" });
       }
@@ -271,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteUser(id);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Impossible de supprimer cet utilisateur" });
       }
@@ -350,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userData = insertUserSchema.partial().parse(req.body);
       const user = await storage.updateUser(id, userData);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Utilisateur introuvable" });
       }
@@ -365,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.toggleUserStatus(id);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Utilisateur introuvable" });
       }
@@ -380,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteUser(id);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Impossible de supprimer cet utilisateur" });
       }
@@ -416,28 +423,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const categoryData = insertCategorySchema.partial().parse(req.body);
       const category = await storage.updateCategory(id, categoryData);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Catégorie introuvable" });
       }
 
       res.json(category);
-    } catch (error) {
-      res.status(500).json({ message: "Erreur serveur" });
-    }
+  } catch (error) {
+    console.error(error); // Ajoute ceci
+    res.status(500).json({ message: "Erreur serveur" });
+  }
   });
 
   app.delete("/api/categories/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteCategory(id);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Impossible de supprimer cette catégorie" });
       }
 
       res.json({ message: "Catégorie supprimée" });
     } catch (error) {
+      console.error(error); // Ajoute ceci
       res.status(500).json({ message: "Erreur serveur" });
     }
   });
@@ -448,6 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const products = await storage.getProducts();
       res.json(products);
     } catch (error) {
+      console.error(error); // Ajoute ceci
       res.status(500).json({ message: "Erreur serveur" });
     }
   });
@@ -458,6 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const product = await storage.createProduct(productData);
       res.json(product);
     } catch (error) {
+      console.error(error); // Ajoute ceci
       res.status(500).json({ message: "Erreur serveur" });
     }
   });
@@ -467,13 +478,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const productData = insertProductSchema.partial().parse(req.body);
       const product = await storage.updateProduct(id, productData);
-      
+
       if (!product) {
         return res.status(404).json({ message: "Produit introuvable" });
       }
 
       res.json(product);
     } catch (error) {
+      console.error(error); // Ajoute ceci
       res.status(500).json({ message: "Erreur serveur" });
     }
   });
@@ -482,13 +494,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteProduct(id);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Impossible de supprimer ce produit" });
       }
 
       res.json({ message: "Produit supprimé" });
     } catch (error) {
+      console.error(error); // Ajoute ceci
       res.status(500).json({ message: "Erreur serveur" });
     }
   });
@@ -508,13 +521,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const session = (req as any).session;
       const account = (req as any).account;
-      
+
       if (!session.selectedUserId) {
         return res.status(400).json({ message: "Veuillez sélectionner un utilisateur" });
       }
 
       const { items, paymentMethod } = checkoutSchema.parse(req.body);
-      
+
       // Calculate total
       let total = 0;
       for (const item of items) {
@@ -568,7 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const session = (req as any).session;
       const account = (req as any).account;
-      
+
       if (!session.selectedUserId) {
         return res.status(400).json({ message: "Veuillez sélectionner un utilisateur" });
       }
@@ -602,18 +615,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const account = (req as any).account;
       const selectedUser = (req as any).selectedUser;
-      
+
       // Vérifier qu'un utilisateur est sélectionné
       if (!selectedUser) {
-        return res.status(400).json({ 
-          message: "Aucun employé sélectionné. Veuillez vous reconnecter." 
+        return res.status(400).json({
+          message: "Aucun employé sélectionné. Veuillez vous reconnecter."
         });
       }
-      
+
       // Vérifier que l'account a les informations Telegram
       if (!account.telegramChatId || !account.telegramBotToken) {
-        return res.status(400).json({ 
-          message: "Configuration Telegram manquante. Contactez votre administrateur." 
+        return res.status(400).json({
+          message: "Configuration Telegram manquante. Contactez votre administrateur."
         });
       }
 
@@ -625,10 +638,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Envoyer la notification Telegram
       const success = await sendTelegramMessage(account.telegramChatId, account.telegramBotToken, message);
-      
+
       if (!success) {
-        return res.status(500).json({ 
-          message: "Erreur lors de l'envoi de la notification Telegram" 
+        return res.status(500).json({
+          message: "Erreur lors de l'envoi de la notification Telegram"
         });
       }
 
@@ -638,9 +651,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.deleteSession(token);
       }
 
-      res.json({ 
-        message: "Caisse clôturée avec succès", 
-        summary: dailySummary 
+      res.json({
+        message: "Caisse clôturée avec succès",
+        summary: dailySummary
       });
     } catch (error) {
       console.error("Erreur lors de la clôture de caisse:", error);

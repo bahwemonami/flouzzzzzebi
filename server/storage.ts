@@ -1,5 +1,12 @@
 import { accounts, users, sessions, categories, products, transactions, transactionItems, type Account, type InsertAccount, type User, type InsertUser, type Session, type Category, type InsertCategory, type Product, type InsertProduct, type Transaction, type InsertTransaction, type TransactionItem, type InsertTransactionItem } from "@shared/schema";
 import { nanoid } from "nanoid";
+import dotenv from "dotenv";
+dotenv.config();
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not defined in the environment variables");
+}
 
 export interface IStorage {
   // Account operations
